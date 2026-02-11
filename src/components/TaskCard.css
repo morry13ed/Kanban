@@ -34,6 +34,24 @@
   word-break: break-word;
 }
 
+.task-title:hover {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.task-title-input {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  line-height: 1.4;
+  width: 100%;
+  outline: none;
+}
+
 .task-description {
   font-size: 12px;
   color: var(--text-secondary);

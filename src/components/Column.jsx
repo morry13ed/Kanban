@@ -90,8 +90,8 @@ export default function Column({
         ) : (
           <h3
             className="column-name"
-            onDoubleClick={() => setEditing(true)}
-            title="Double-click to rename"
+            onClick={() => setEditing(true)}
+            title="Click to rename column"
           >
             {column.name}
             <span className="column-count">{tasks.length}</span>
@@ -120,6 +120,7 @@ export default function Column({
           <TaskCard
             key={task.id}
             task={task}
+            boardId={boardId}
             isFirst={isFirst}
             isLast={isLast}
             onEdit={() => onEditTask(task)}

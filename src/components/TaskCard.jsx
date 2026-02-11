@@ -1,7 +1,10 @@
+import { useEffect, useState } from 'react';
+import { useApp } from '../context/AppContext';
 import './TaskCard.css';
 
 export default function TaskCard({
   task,
+  boardId,
   isFirst,
   isLast,
   onEdit,
@@ -14,6 +17,14 @@ export default function TaskCard({
   onDragEnd,
   isDragging,
 }) {
+  const { dispatch } = useApp();
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(task.title);
+
+  useEffect(() => {
+    setTitleDraft(task.title);
+  }, [task.title]);
+
   const isOverdue =
     task.dueDate && new Date(task.dueDate) < new Date() && !task.archived;
 
@@ -21,6 +32,29 @@ export default function TaskCard({
     if (!dateStr) return null;
     const d = new Date(dateStr);
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const handleTitleClick = (e) => {
+    e.stopPropagation();
+    setIsEditingTitle(true);
+  };
+
+  const handleTitleSave = () => {
+    const nextTitle = titleDraft.trim() || task.title;
+
+    if (nextTitle !== task.title) {
+      dispatch({
+        type: 'UPDATE_TASK',
+        payload: {
+          boardId,
+          taskId: task.id,
+          updates: { title: nextTitle },
+        },
+      });
+    }
+
+    setTitleDraft(nextTitle);
+    setIsEditingTitle(false);
   };
 
   return (
@@ -35,7 +69,36 @@ export default function TaskCard({
       onClick={onEdit}
     >
       <div className="task-card-header">
-        <h4 className="task-title">{task.title}</h4>
+        {isEditingTitle ? (
+          <input
+            className="task-title-input"
+            type="text"
+            value={titleDraft}
+            onChange={(e) => setTitleDraft(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            onBlur={handleTitleSave}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleTitleSave();
+              }
+              if (e.key === 'Escape') {
+                e.preventDefault();
+                setTitleDraft(task.title);
+                setIsEditingTitle(false);
+              }
+            }}
+            autoFocus
+          />
+        ) : (
+          <h4
+            className="task-title"
+            onClick={handleTitleClick}
+            title="Click to rename task"
+          >
+            {task.title}
+          </h4>
+        )}
       </div>
 
       {task.description && (
