@@ -11,20 +11,38 @@ export default function Sidebar() {
   const [showNewBoard, setShowNewBoard] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
   const [newBoardColor, setNewBoardColor] = useState(BOARD_COLORS[0]);
+  const [newBoardCollaborators, setNewBoardCollaborators] = useState([]);
+  const [editingBoardId, setEditingBoardId] = useState(null);
+  const [editingBoardName, setEditingBoardName] = useState('');
+  const [editingBoardColor, setEditingBoardColor] = useState(BOARD_COLORS[0]);
   const fileInputRef = useRef(null);
 
   const handleCreateBoard = () => {
     const name = newBoardName.trim();
     if (!name) return;
-    dispatch({ type: 'ADD_BOARD', payload: { name, color: newBoardColor } });
+    const members = newBoardCollaborators
+      .map(({ name, email }) => ({
+        name: name.trim(),
+        email: email.trim(),
+      }))
+      .filter((c) => c.name);
+
+    dispatch({
+      type: 'ADD_BOARD',
+      payload: { name, color: newBoardColor, members },
+    });
     setNewBoardName('');
     setNewBoardColor(BOARD_COLORS[0]);
+    setNewBoardCollaborators([]);
     setShowNewBoard(false);
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') handleCreateBoard();
-    if (e.key === 'Escape') setShowNewBoard(false);
+    if (e.key === 'Escape') {
+      setShowNewBoard(false);
+      setNewBoardCollaborators([]);
+    }
   };
 
   const handleExport = () => {
@@ -41,6 +59,28 @@ export default function Sidebar() {
       alert('Import failed: ' + err.message);
     }
     e.target.value = '';
+  };
+
+  const startEditingBoard = (board) => {
+    setEditingBoardId(board.id);
+    setEditingBoardName(board.name);
+    setEditingBoardColor(board.color);
+  };
+
+  const saveEditingBoard = (board) => {
+    if (!editingBoardId) return;
+    const name = editingBoardName.trim() || board.name;
+    dispatch({
+      type: 'UPDATE_BOARD',
+      payload: {
+        id: board.id,
+        updates: {
+          name,
+          color: editingBoardColor,
+        },
+      },
+    });
+    setEditingBoardId(null);
   };
 
   return (
@@ -70,26 +110,74 @@ export default function Sidebar() {
             {projectsOpen && (
               <div className="sidebar-section-content">
                 <ul className="board-list">
-                  {state.boards.map((board) => (
-                    <li
-                      key={board.id}
-                      className={`board-item ${
-                        state.activeBoardId === board.id ? 'active' : ''
-                      }`}
-                      onClick={() =>
-                        dispatch({
-                          type: 'SET_ACTIVE_BOARD',
-                          payload: board.id,
-                        })
-                      }
-                    >
-                      <span
-                        className="board-dot"
-                        style={{ backgroundColor: board.color }}
-                      />
-                      <span className="board-name">{board.name}</span>
-                    </li>
-                  ))}
+                  {state.boards.map((board) => {
+                    const isActive = state.activeBoardId === board.id;
+                    const isEditing = editingBoardId === board.id;
+
+                    return (
+                      <li
+                        key={board.id}
+                        className={`board-item ${isActive ? 'active' : ''} ${
+                          isEditing ? 'editing' : ''
+                        }`}
+                        onClick={() =>
+                          dispatch({
+                            type: 'SET_ACTIVE_BOARD',
+                            payload: board.id,
+                          })
+                        }
+                      >
+                        <span
+                          className="board-dot"
+                          style={{ backgroundColor: board.color }}
+                        />
+                        {isEditing ? (
+                          <div className="board-edit-content">
+                            <input
+                              type="text"
+                              value={editingBoardName}
+                              onChange={(e) => setEditingBoardName(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="board-name-input"
+                            />
+                            <div
+                              className="board-color-picker"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {BOARD_COLORS.map((c) => (
+                                <button
+                                  key={c}
+                                  type="button"
+                                  className={`board-color-dot ${
+                                    editingBoardColor === c ? 'selected' : ''
+                                  }`}
+                                  style={{ backgroundColor: c }}
+                                  onClick={() => setEditingBoardColor(c)}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="board-name">{board.name}</span>
+                        )}
+                        <button
+                          type="button"
+                          className="board-edit-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isEditing) {
+                              saveEditingBoard(board);
+                            } else {
+                              startEditingBoard(board);
+                            }
+                          }}
+                          title={isEditing ? 'Save changes' : 'Edit project'}
+                        >
+                          {isEditing ? '✓' : '✎'}
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
 
                 {showNewBoard ? (
@@ -103,6 +191,46 @@ export default function Sidebar() {
                       autoFocus
                       className="new-board-input"
                     />
+                    <div className="collaborators-section">
+                      {newBoardCollaborators.map((collab, idx) => (
+                        <div key={idx} className="collaborator-row">
+                          <input
+                            type="text"
+                            placeholder="Name"
+                            value={collab.name}
+                            onChange={(e) => {
+                              const next = [...newBoardCollaborators];
+                              next[idx] = { ...next[idx], name: e.target.value };
+                              setNewBoardCollaborators(next);
+                            }}
+                            className="new-board-input"
+                          />
+                          <input
+                            type="email"
+                            placeholder="Email"
+                            value={collab.email}
+                            onChange={(e) => {
+                              const next = [...newBoardCollaborators];
+                              next[idx] = { ...next[idx], email: e.target.value };
+                              setNewBoardCollaborators(next);
+                            }}
+                            className="new-board-input"
+                          />
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="btn-link"
+                        onClick={() =>
+                          setNewBoardCollaborators([
+                            ...newBoardCollaborators,
+                            { name: '', email: '' },
+                          ])
+                        }
+                      >
+                        Add collaborator
+                      </button>
+                    </div>
                     <div className="color-picker">
                       {BOARD_COLORS.map((c) => (
                         <button

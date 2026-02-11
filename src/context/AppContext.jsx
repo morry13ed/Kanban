@@ -1,5 +1,10 @@
 import { createContext, useContext, useReducer, useEffect } from 'react';
-import { loadState, saveState } from '../utils/storage';
+import {
+  loadState,
+  saveState,
+  loadRemoteState,
+  saveRemoteState,
+} from '../utils/storage';
 import { createBoard, createTask, generateId } from '../utils/helpers';
 
 const AppContext = createContext();
@@ -23,7 +28,11 @@ function reducer(state, action) {
 
     // ── Boards ──
     case 'ADD_BOARD': {
-      const board = createBoard(action.payload.name, action.payload.color);
+      const board = createBoard(
+        action.payload.name,
+        action.payload.color,
+        action.payload.members
+      );
       return {
         ...state,
         boards: [...state.boards, board],
@@ -209,6 +218,23 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     saveState(state);
+  }, [state]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const remote = await loadRemoteState();
+      if (remote && mounted) {
+        dispatch({ type: 'IMPORT_STATE', payload: remote });
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    saveRemoteState(state);
   }, [state]);
 
   useEffect(() => {

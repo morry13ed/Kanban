@@ -108,7 +108,7 @@
   cursor: pointer;
   color: var(--text-secondary);
   font-size: 14px;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
 .board-item:hover {
@@ -122,6 +122,10 @@
   font-weight: 500;
 }
 
+.board-item.editing {
+  background: rgba(250, 204, 21, 0.08);
+}
+
 .board-dot {
   width: 10px;
   height: 10px;
@@ -133,6 +137,67 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.board-name-input {
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 13px;
+  width: 100%;
+  outline: none;
+}
+
+.board-name-input:focus {
+  border-color: var(--accent);
+}
+
+.board-edit-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.board-color-picker {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.board-color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.board-color-dot.selected {
+  border-color: var(--accent);
+}
+
+.board-edit-btn {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.board-item:hover .board-edit-btn,
+.board-item.editing .board-edit-btn {
+  opacity: 1;
+}
+
+.board-edit-btn:hover {
+  color: var(--accent);
 }
 
 .btn-create-project {
@@ -209,6 +274,46 @@
 .new-board-actions {
   display: flex;
   gap: 6px;
+}
+
+.collaborators-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.collaborator-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.btn-link {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0;
+  margin-top: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  box-sizing: content-box;
+}
+
+.btn-link::before {
+  content: '+';
+  font-size: 14px;
+}
+
+.btn-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
 }
 
 .sidebar-footer {

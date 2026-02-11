@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { USERS } from '../utils/helpers';
 import './TaskModal.css';
 
 export default function TaskModal({
   task,
   columns,
   defaultColumnId,
+  members = [],
   onSave,
   onClose,
 }) {
@@ -16,6 +16,8 @@ export default function TaskModal({
     task?.columnId || defaultColumnId || ''
   );
   const [dueDate, setDueDate] = useState(task?.dueDate || '');
+
+  const assigneeOptions = ['Unassigned', ...members];
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -73,7 +75,7 @@ export default function TaskModal({
                 value={assignee}
                 onChange={(e) => setAssignee(e.target.value)}
               >
-                {USERS.map((u) => (
+                {assigneeOptions.map((u) => (
                   <option key={u} value={u}>
                     {u}
                   </option>

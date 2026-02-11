@@ -1,4 +1,7 @@
+import { supabase } from '../lib/supabaseClient';
+
 const STORAGE_KEY = 'kanban-app-state';
+const REMOTE_STATE_ID = 'default';
 
 export function loadState() {
   try {
@@ -15,6 +18,37 @@ export function saveState(state) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (e) {
     console.error('Failed to save state:', e);
+  }
+}
+
+export async function loadRemoteState() {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('app_state')
+    .select('state')
+    .eq('id', REMOTE_STATE_ID)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Failed to load remote state:', error);
+    return null;
+  }
+
+  return data?.state ?? null;
+}
+
+export async function saveRemoteState(state) {
+  if (!supabase) return;
+  const { error } = await supabase.from('app_state').upsert(
+    {
+      id: REMOTE_STATE_ID,
+      state,
+    },
+    { onConflict: 'id' }
+  );
+
+  if (error) {
+    console.error('Failed to save remote state:', error);
   }
 }
 

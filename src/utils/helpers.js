@@ -2,11 +2,12 @@ export function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
-export function createBoard(name, color = '#3b82f6') {
+export function createBoard(name, color = '#3b82f6', members = []) {
   return {
     id: generateId(),
     name,
     color,
+    members,
     columns: [
       { id: generateId(), name: 'To Do' },
       { id: generateId(), name: 'In Progress' },
@@ -28,9 +29,6 @@ export function createTask(title, columnId, assignee = 'Unassigned', description
     archived: false,
   };
 }
-
-export const USERS = ['Itay', 'Morry', 'Unassigned'];
-export const FILTER_OPTIONS = ['All', 'Itay', 'Morry', 'Unassigned'];
 
 export const BOARD_COLORS = [
   '#3b82f6', // blue

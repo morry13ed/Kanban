@@ -3,7 +3,6 @@ import { useApp } from '../context/AppContext';
 import Column from './Column';
 import TaskModal from './TaskModal';
 import ConfirmDialog from './ConfirmDialog';
-import { FILTER_OPTIONS } from '../utils/helpers';
 import './Board.css';
 
 export default function Board() {
@@ -29,11 +28,30 @@ export default function Board() {
     );
   }
 
+  const inferredMembers = Array.from(
+    new Set(
+      board.tasks
+        .map((t) => t.assignee)
+        .filter((a) => a && a !== 'Unassigned')
+    )
+  );
+
+  const memberNamesFromBoard = (board.members || [])
+    .map((m) => (typeof m === 'string' ? m : m.name))
+    .filter(Boolean);
+
+  const boardMembers =
+    memberNamesFromBoard.length > 0 ? memberNamesFromBoard : inferredMembers;
+
   const filteredTasks = board.tasks.filter((t) => {
     if (t.archived) return false;
     if (state.filter === 'All') return true;
     return t.assignee === state.filter;
   });
+
+  const filterOptions = Array.from(
+    new Set(['All', ...boardMembers, 'Unassigned'])
+  );
 
   const handleAddTask = (columnId) => {
     setEditingTask(null);
@@ -162,7 +180,7 @@ export default function Board() {
         </div>
         <div className="board-header-right">
           <div className="filter-bar">
-            {FILTER_OPTIONS.map((opt) => (
+            {filterOptions.map((opt) => (
               <button
                 key={opt}
                 className={`filter-btn ${state.filter === opt ? 'active' : ''}`}
@@ -247,6 +265,7 @@ export default function Board() {
         <TaskModal
           task={editingTask}
           columns={board.columns}
+          members={boardMembers}
           defaultColumnId={defaultColumnId || board.columns[0]?.id}
           onSave={handleSaveTask}
           onClose={() => {
