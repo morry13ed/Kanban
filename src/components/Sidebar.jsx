@@ -15,6 +15,7 @@ export default function Sidebar() {
   const [editingBoardId, setEditingBoardId] = useState(null);
   const [editingBoardName, setEditingBoardName] = useState('');
   const [editingBoardColor, setEditingBoardColor] = useState(BOARD_COLORS[0]);
+  const [editingBoardCollaborators, setEditingBoardCollaborators] = useState([]);
   const fileInputRef = useRef(null);
 
   const handleCreateBoard = () => {
@@ -65,11 +66,23 @@ export default function Sidebar() {
     setEditingBoardId(board.id);
     setEditingBoardName(board.name);
     setEditingBoardColor(board.color);
+    const members = (board.members || []).map((m) =>
+      typeof m === 'string'
+        ? { name: m, email: '' }
+        : { name: m.name || '', email: m.email || '' }
+    );
+    setEditingBoardCollaborators(members);
   };
 
   const saveEditingBoard = (board) => {
     if (!editingBoardId) return;
     const name = editingBoardName.trim() || board.name;
+    const members = editingBoardCollaborators
+      .map(({ name, email }) => ({
+        name: name.trim(),
+        email: email.trim(),
+      }))
+      .filter((c) => c.name);
     dispatch({
       type: 'UPDATE_BOARD',
       payload: {
@@ -77,10 +90,12 @@ export default function Sidebar() {
         updates: {
           name,
           color: editingBoardColor,
+          members,
         },
       },
     });
     setEditingBoardId(null);
+    setEditingBoardCollaborators([]);
   };
 
   return (
@@ -140,6 +155,55 @@ export default function Sidebar() {
                               onClick={(e) => e.stopPropagation()}
                               className="board-name-input"
                             />
+                            <div
+                              className="collaborators-section"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {editingBoardCollaborators.map((collab, idx) => (
+                                <div key={idx} className="collaborator-row">
+                                  <input
+                                    type="text"
+                                    placeholder="Name"
+                                    value={collab.name}
+                                    onChange={(e) => {
+                                      const next = [...editingBoardCollaborators];
+                                      next[idx] = {
+                                        ...next[idx],
+                                        name: e.target.value,
+                                      };
+                                      setEditingBoardCollaborators(next);
+                                    }}
+                                    className="new-board-input"
+                                  />
+                                  <input
+                                    type="email"
+                                    placeholder="Email"
+                                    value={collab.email}
+                                    onChange={(e) => {
+                                      const next = [...editingBoardCollaborators];
+                                      next[idx] = {
+                                        ...next[idx],
+                                        email: e.target.value,
+                                      };
+                                      setEditingBoardCollaborators(next);
+                                    }}
+                                    className="new-board-input"
+                                  />
+                                </div>
+                              ))}
+                              <button
+                                type="button"
+                                className="btn-link"
+                                onClick={() =>
+                                  setEditingBoardCollaborators([
+                                    ...editingBoardCollaborators,
+                                    { name: '', email: '' },
+                                  ])
+                                }
+                              >
+                                Add collaborator
+                              </button>
+                            </div>
                             <div
                               className="board-color-picker"
                               onClick={(e) => e.stopPropagation()}
