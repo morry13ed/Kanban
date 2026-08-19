@@ -17,7 +17,19 @@ export function createBoard(name, color = '#3b82f6', members = []) {
   };
 }
 
-export function createTask(title, columnId, assignee = 'Unassigned', description = '', dueDate = '') {
+export const LEVEL_MIN = 1;
+export const LEVEL_MAX = 5;
+export const LEVEL_DEFAULT = 3;
+
+export function createTask({
+  title,
+  columnId,
+  assignee = 'Unassigned',
+  description = '',
+  dueDate = '',
+  impact = LEVEL_DEFAULT,
+  time = LEVEL_DEFAULT,
+}) {
   return {
     id: generateId(),
     title,
@@ -26,8 +38,36 @@ export function createTask(title, columnId, assignee = 'Unassigned', description
     columnId,
     createdAt: new Date().toISOString(),
     dueDate,
+    impact,
+    time,
     archived: false,
   };
+}
+
+function clampLevel(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return LEVEL_DEFAULT;
+  return Math.min(LEVEL_MAX, Math.max(LEVEL_MIN, n));
+}
+
+export const IMPACT_WEIGHT = 0.6;
+export const TIME_WEIGHT = 0.4;
+
+// Impact pushes priority up, time pulls it down, weighted 60/40. Scaled to
+// 0-100 so every combination lands somewhere on a readable scale:
+//   high impact + low time  = 100  (do this first)
+//   high impact + high time =  60
+//   low impact  + low time  =  40
+//   low impact  + high time =   0  (do this last)
+// Impact outweighing time is what puts the big-but-slow task above the
+// small-and-quick one.
+export function getPriority(task) {
+  const span = LEVEL_MAX - LEVEL_MIN;
+  const impact = (clampLevel(task?.impact) - LEVEL_MIN) / span;
+  const time = (clampLevel(task?.time) - LEVEL_MIN) / span;
+  const score = IMPACT_WEIGHT * impact - TIME_WEIGHT * time + TIME_WEIGHT;
+
+  return Math.round(score * 100);
 }
 
 export const BOARD_COLORS = [
@@ -45,6 +85,8 @@ export const BOARD_COLORS = [
    Add an entry here and sortTasks below to expose a new column sort option. */
 export const SORT_OPTIONS = [
   { value: 'manual', label: 'Manual' },
+  { value: 'priority', label: 'Priority' },
+  { value: 'impact', label: 'Impact' },
   { value: 'dueDate', label: 'Due date' },
   { value: 'assignee', label: 'Assignee' },
 ];
@@ -65,6 +107,15 @@ export function sortTasks(tasks, sortBy) {
         if (!b.dueDate) return -1;
         return a.dueDate.localeCompare(b.dueDate);
       });
+
+    // Highest first for both.
+    case 'priority':
+      return sorted.sort((a, b) => getPriority(b) - getPriority(a));
+
+    case 'impact':
+      return sorted.sort(
+        (a, b) => clampLevel(b?.impact) - clampLevel(a?.impact)
+      );
 
     // A→Z; Unassigned sinks to the bottom.
     case 'assignee':

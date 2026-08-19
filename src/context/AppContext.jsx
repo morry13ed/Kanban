@@ -166,9 +166,8 @@ function reducer(state, action) {
 
     // ── Tasks ──
     case 'ADD_TASK': {
-      const { boardId, title, columnId, assignee, description, dueDate } =
-        action.payload;
-      const task = createTask(title, columnId, assignee, description, dueDate);
+      const { boardId } = action.payload;
+      const task = createTask(action.payload);
       return {
         ...state,
         boards: state.boards.map((b) =>
@@ -220,6 +219,33 @@ function reducer(state, action) {
               }
             : b
         ),
+      };
+    }
+    // Moves a task to targetColumnId and places it directly before
+    // beforeTaskId, or at the end of the board's task list when that is null.
+    // Order within a column is just the order of board.tasks.
+    case 'REORDER_TASK': {
+      const { boardId, taskId, targetColumnId, beforeTaskId } = action.payload;
+
+      return {
+        ...state,
+        boards: state.boards.map((b) => {
+          if (b.id !== boardId) return b;
+
+          const moving = b.tasks.find((t) => t.id === taskId);
+          if (!moving) return b;
+
+          const rest = b.tasks.filter((t) => t.id !== taskId);
+          const moved = { ...moving, columnId: targetColumnId };
+          const at = beforeTaskId
+            ? rest.findIndex((t) => t.id === beforeTaskId)
+            : -1;
+
+          if (at === -1) rest.push(moved);
+          else rest.splice(at, 0, moved);
+
+          return { ...b, tasks: rest };
+        }),
       };
     }
     case 'ARCHIVE_TASK': {

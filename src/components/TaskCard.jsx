@@ -16,10 +16,14 @@ export default function TaskCard({
   onDragStart,
   onDragEnd,
   isDragging,
+  canReorder,
+  onDropOnTask,
 }) {
   const { dispatch } = useApp();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(task.title);
+  // 'top' | 'bottom' — which side of this card the drop would land on.
+  const [dropEdge, setDropEdge] = useState(null);
 
   useEffect(() => {
     setTitleDraft(task.title);
@@ -57,15 +61,42 @@ export default function TaskCard({
     setIsEditingTitle(false);
   };
 
+  const handleDragOver = (e) => {
+    if (!canReorder || isDragging) return;
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDropEdge(e.clientY < rect.top + rect.height / 2 ? 'top' : 'bottom');
+  };
+
+  const handleDragLeave = () => setDropEdge(null);
+
+  const handleDrop = (e) => {
+    if (!canReorder || isDragging || !dropEdge) return;
+    // Beat the column's own drop handler, which appends to the end.
+    e.preventDefault();
+    e.stopPropagation();
+    const edge = dropEdge;
+    setDropEdge(null);
+    onDropOnTask(task.id, edge);
+  };
+
   return (
     <div
-      className={`task-card ${isDragging ? 'dragging' : ''}`}
+      className={`task-card ${isDragging ? 'dragging' : ''} ${
+        dropEdge ? `drop-${dropEdge}` : ''
+      }`}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.effectAllowed = 'move';
         onDragStart();
       }}
-      onDragEnd={onDragEnd}
+      onDragEnd={() => {
+        setDropEdge(null);
+        onDragEnd();
+      }}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
       onClick={onEdit}
     >
       <div className="task-card-header">

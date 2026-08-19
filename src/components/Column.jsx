@@ -19,6 +19,7 @@ export default function Column({
   onDeleteTask,
   onDragStart,
   onDrop,
+  onDropAt,
   onDragEnd,
   draggedTaskId,
 }) {
@@ -53,6 +54,24 @@ export default function Column({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [showSortMenu]);
+
+  // Only meaningful under manual sort — with a sort applied the order is
+  // computed, so dropping at a position would have no visible effect.
+  const canReorder = sortBy === DEFAULT_SORT;
+
+  const handleDropOnTask = (taskId, edge) => {
+    const index = tasks.findIndex((t) => t.id === taskId);
+    const beforeTaskId =
+      edge === 'top' ? taskId : tasks[index + 1]?.id ?? null;
+
+    // Dropping a task back where it already sits.
+    if (taskId === draggedTaskId || beforeTaskId === draggedTaskId) {
+      onDragEnd();
+      return;
+    }
+
+    onDropAt(beforeTaskId);
+  };
 
   const handleSort = (value) => {
     dispatch({
@@ -203,6 +222,8 @@ export default function Column({
             onDragStart={() => onDragStart(task.id)}
             onDragEnd={onDragEnd}
             isDragging={draggedTaskId === task.id}
+            canReorder={canReorder && Boolean(draggedTaskId)}
+            onDropOnTask={handleDropOnTask}
           />
         ))}
       </div>

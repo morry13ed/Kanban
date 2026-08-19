@@ -13,6 +13,26 @@
   box-shadow: 0 2px 8px var(--shadow);
 }
 
+/* Insertion line showing where the dragged card will land. */
+.task-card.drop-top::before,
+.task-card.drop-bottom::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.task-card.drop-top::before {
+  top: -5px;
+}
+
+.task-card.drop-bottom::after {
+  bottom: -5px;
+}
+
 .task-card.dragging {
   opacity: 0.4;
   transform: rotate(2deg);

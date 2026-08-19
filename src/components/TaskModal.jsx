@@ -1,4 +1,10 @@
 import { useState } from 'react';
+import {
+  LEVEL_MIN,
+  LEVEL_MAX,
+  LEVEL_DEFAULT,
+  getPriority,
+} from '../utils/helpers';
 import './TaskModal.css';
 
 export default function TaskModal({
@@ -16,8 +22,11 @@ export default function TaskModal({
     task?.columnId || defaultColumnId || ''
   );
   const [dueDate, setDueDate] = useState(task?.dueDate || '');
+  const [impact, setImpact] = useState(task?.impact ?? LEVEL_DEFAULT);
+  const [time, setTime] = useState(task?.time ?? LEVEL_DEFAULT);
 
   const assigneeOptions = ['Unassigned', ...members];
+  const priority = getPriority({ impact, time });
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -29,6 +38,8 @@ export default function TaskModal({
       assignee,
       columnId,
       dueDate,
+      impact: Number(impact),
+      time: Number(time),
     });
   };
 
@@ -97,6 +108,43 @@ export default function TaskModal({
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="task-impact">
+                Impact <span className="level-value">{impact}</span>
+              </label>
+              <input
+                id="task-impact"
+                type="range"
+                min={LEVEL_MIN}
+                max={LEVEL_MAX}
+                step={1}
+                value={impact}
+                onChange={(e) => setImpact(Number(e.target.value))}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="task-time">
+                Time <span className="level-value">{time}</span>
+              </label>
+              <input
+                id="task-time"
+                type="range"
+                min={LEVEL_MIN}
+                max={LEVEL_MAX}
+                step={1}
+                value={time}
+                onChange={(e) => setTime(Number(e.target.value))}
+              />
+            </div>
+          </div>
+
+          <div className="priority-readout">
+            <span>Priority</span>
+            <span className="priority-score">{priority}</span>
           </div>
 
           <div className="form-group">

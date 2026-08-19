@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { sortTasks } from '../utils/helpers';
+import { sortTasks, DEFAULT_SORT } from '../utils/helpers';
 import Column from './Column';
 import TaskModal from './TaskModal';
 import ConfirmDialog from './ConfirmDialog';
@@ -149,14 +149,28 @@ export default function Board() {
     setDraggedTaskId(taskId);
   };
 
-  const handleDrop = (columnId) => {
+  // beforeTaskId === null means "put it at the end".
+  const handleDropAt = (columnId, beforeTaskId) => {
     if (!draggedTaskId) return;
+
+    const dragged = board.tasks.find((t) => t.id === draggedTaskId);
+    const column = board.columns.find((c) => c.id === columnId);
+    const isSorted = column && (column.sortBy || DEFAULT_SORT) !== DEFAULT_SORT;
+
+    // Rearranging inside a sorted column can't change what you see, so don't
+    // quietly shuffle the manual order sitting underneath it.
+    if (isSorted && dragged?.columnId === columnId) {
+      setDraggedTaskId(null);
+      return;
+    }
+
     dispatch({
-      type: 'MOVE_TASK',
+      type: 'REORDER_TASK',
       payload: {
         boardId: board.id,
         taskId: draggedTaskId,
         targetColumnId: columnId,
+        beforeTaskId,
       },
     });
     setDraggedTaskId(null);
@@ -221,7 +235,8 @@ export default function Board() {
             onArchiveTask={handleArchiveTask}
             onDeleteTask={handleDeleteTask}
             onDragStart={handleDragStart}
-            onDrop={() => handleDrop(column.id)}
+            onDrop={() => handleDropAt(column.id, null)}
+            onDropAt={(beforeTaskId) => handleDropAt(column.id, beforeTaskId)}
             onDragEnd={handleDragEnd}
             draggedTaskId={draggedTaskId}
           />
