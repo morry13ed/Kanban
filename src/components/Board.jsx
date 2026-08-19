@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { sortTasks } from '../utils/helpers';
 import Column from './Column';
 import TaskModal from './TaskModal';
 import ConfirmDialog from './ConfirmDialog';
@@ -206,7 +207,10 @@ export default function Board() {
           <Column
             key={column.id}
             column={column}
-            tasks={filteredTasks.filter((t) => t.columnId === column.id)}
+            tasks={sortTasks(
+              filteredTasks.filter((t) => t.columnId === column.id),
+              column.sortBy
+            )}
             boardId={board.id}
             isFirst={index === 0}
             isLast={index === board.columns.length - 1}

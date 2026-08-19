@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { SORT_OPTIONS, DEFAULT_SORT } from '../utils/helpers';
 import TaskCard from './TaskCard';
 import ConfirmDialog from './ConfirmDialog';
 import './Column.css';
@@ -26,6 +27,40 @@ export default function Column({
   const [columnName, setColumnName] = useState(column.name);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const sortRef = useRef(null);
+
+  const sortBy = column.sortBy || DEFAULT_SORT;
+  const activeSort = SORT_OPTIONS.find((o) => o.value === sortBy);
+
+  // Dismiss the sort menu on outside click or Escape.
+  useEffect(() => {
+    if (!showSortMenu) return;
+
+    const handlePointerDown = (e) => {
+      if (sortRef.current && !sortRef.current.contains(e.target)) {
+        setShowSortMenu(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setShowSortMenu(false);
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showSortMenu]);
+
+  const handleSort = (value) => {
+    dispatch({
+      type: 'SET_COLUMN_SORT',
+      payload: { boardId, columnId: column.id, sortBy: value },
+    });
+    setShowSortMenu(false);
+  };
 
   const handleRename = () => {
     const name = columnName.trim();
@@ -98,6 +133,42 @@ export default function Column({
           </h3>
         )}
         <div className="column-actions">
+          <div className="column-sort" ref={sortRef}>
+            <button
+              className={`column-action-btn ${
+                sortBy !== DEFAULT_SORT ? 'active' : ''
+              }`}
+              onClick={() => setShowSortMenu((open) => !open)}
+              title={
+                sortBy === DEFAULT_SORT
+                  ? 'Sort tasks'
+                  : `Sorted by ${activeSort.label.toLowerCase()}`
+              }
+            >
+              ⇅
+            </button>
+
+            {showSortMenu && (
+              <div className="column-sort-menu">
+                <span className="column-sort-label">Sort by</span>
+                {SORT_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    className={`column-sort-item ${
+                      sortBy === option.value ? 'active' : ''
+                    }`}
+                    onClick={() => handleSort(option.value)}
+                  >
+                    {option.label}
+                    {sortBy === option.value && (
+                      <span className="column-sort-check">✓</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <button
             className="column-action-btn"
             onClick={onAddTask}

@@ -5,7 +5,12 @@ import {
   loadRemoteState,
   saveRemoteState,
 } from '../utils/storage';
-import { createBoard, createTask, generateId } from '../utils/helpers';
+import {
+  createBoard,
+  createTask,
+  generateId,
+  DEFAULT_SORT,
+} from '../utils/helpers';
 
 const AppContext = createContext();
 
@@ -69,7 +74,11 @@ function reducer(state, action) {
                 ...b,
                 columns: [
                   ...b.columns,
-                  { id: generateId(), name: action.payload.name },
+                  {
+                    id: generateId(),
+                    name: action.payload.name,
+                    sortBy: DEFAULT_SORT,
+                  },
                 ],
               }
             : b
@@ -105,6 +114,23 @@ function reducer(state, action) {
                 ),
                 tasks: b.tasks.filter(
                   (t) => t.columnId !== action.payload.columnId
+                ),
+              }
+            : b
+        ),
+      };
+    }
+    case 'SET_COLUMN_SORT': {
+      return {
+        ...state,
+        boards: state.boards.map((b) =>
+          b.id === action.payload.boardId
+            ? {
+                ...b,
+                columns: b.columns.map((c) =>
+                  c.id === action.payload.columnId
+                    ? { ...c, sortBy: action.payload.sortBy }
+                    : c
                 ),
               }
             : b

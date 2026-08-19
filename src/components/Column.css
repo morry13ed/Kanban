@@ -94,6 +94,72 @@
   color: var(--danger);
 }
 
+.column-action-btn.active {
+  color: var(--accent);
+}
+
+/* ── Sort menu ── */
+.column-sort {
+  position: relative;
+  display: flex;
+}
+
+.column-sort-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 168px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px var(--shadow);
+}
+
+.column-sort-label {
+  padding: 5px 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.column-sort-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.column-sort-item:hover {
+  background: var(--hover);
+}
+
+.column-sort-item.active {
+  color: var(--accent);
+}
+
+.column-sort-check {
+  font-size: 11px;
+}
+
 .column-tasks {
   padding: 0 10px 10px;
   overflow-y: auto;
