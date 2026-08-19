@@ -324,6 +324,54 @@
   flex-wrap: wrap;
 }
 
+.sync-status {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 2px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: default;
+}
+
+.sync-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.sync-status.synced .sync-dot {
+  background: var(--success);
+}
+
+.sync-status.error .sync-dot {
+  background: var(--danger);
+}
+
+.sync-status.error {
+  color: var(--danger);
+}
+
+.sync-status.saving .sync-dot {
+  animation: sync-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes sync-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sync-status.saving .sync-dot {
+    animation: none;
+  }
+}
+
 .sidebar-action {
   flex: 1;
   padding: 6px 8px;

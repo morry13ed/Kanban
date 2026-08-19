@@ -21,8 +21,11 @@ export function saveState(state) {
   }
 }
 
+// Both remote calls report failure rather than swallowing it, so the UI can
+// tell "nothing saved there yet" apart from "the save didn't work".
 export async function loadRemoteState() {
-  if (!supabase) return null;
+  if (!supabase) return { state: null, error: null };
+
   const { data, error } = await supabase
     .from('app_state')
     .select('state')
@@ -31,10 +34,10 @@ export async function loadRemoteState() {
 
   if (error) {
     console.error('Failed to load remote state:', error);
-    return null;
+    return { state: null, error };
   }
 
-  return data?.state ?? null;
+  return { state: data?.state ?? null, error: null };
 }
 
 // Only the data worth carrying between devices. Theme and filter are
@@ -47,7 +50,8 @@ function toSharedState(state) {
 }
 
 export async function saveRemoteState(state) {
-  if (!supabase) return;
+  if (!supabase) return { error: null };
+
   const { error } = await supabase.from('app_state').upsert(
     {
       id: REMOTE_STATE_ID,
@@ -59,6 +63,8 @@ export async function saveRemoteState(state) {
   if (error) {
     console.error('Failed to save remote state:', error);
   }
+
+  return { error: error ?? null };
 }
 
 export function isRemoteEnabled() {

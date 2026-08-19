@@ -11,6 +11,7 @@ import {
   saveState,
   loadRemoteState,
   saveRemoteState,
+  isRemoteEnabled,
 } from '../utils/storage';
 import {
   createBoard,
@@ -22,6 +23,12 @@ import {
 const AppContext = createContext();
 
 const REMOTE_SAVE_DELAY = 800;
+
+// 'off'    — no Supabase credentials, this browser only
+// 'saving' — a write is in flight
+// 'synced' — last read/write succeeded
+// 'error'  — last read/write failed (paused project, network, bad policy)
+const SYNC_OFF = 'off';
 
 const defaultState = {
   boards: [],
@@ -267,6 +274,9 @@ export function AppProvider({ children }) {
   // Blocks remote writes until the first remote read has finished, so a fresh
   // browser can't upload its empty state over what's already stored.
   const [hydrated, setHydrated] = useState(false);
+  const [syncStatus, setSyncStatus] = useState(
+    isRemoteEnabled() ? 'saving' : SYNC_OFF
+  );
 
   // Read inside the one-shot hydration effect without re-running it.
   const stateRef = useRef(state);
@@ -281,7 +291,7 @@ export function AppProvider({ children }) {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const remote = await loadRemoteState();
+      const { state: remote, error } = await loadRemoteState();
       if (!mounted) return;
 
       // If an empty browser reached the table first it will have stored an
@@ -294,6 +304,9 @@ export function AppProvider({ children }) {
         dispatch({ type: 'IMPORT_STATE', payload: remote });
       }
       setHydrated(true);
+      if (isRemoteEnabled()) {
+        setSyncStatus(error ? 'error' : 'synced');
+      }
     })();
     return () => {
       mounted = false;
@@ -301,10 +314,20 @@ export function AppProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || !isRemoteEnabled()) return;
+
     // Coalesce bursts of edits into a single write.
-    const timer = setTimeout(() => saveRemoteState(state), REMOTE_SAVE_DELAY);
-    return () => clearTimeout(timer);
+    let current = true;
+    const timer = setTimeout(async () => {
+      setSyncStatus('saving');
+      const { error } = await saveRemoteState(state);
+      if (current) setSyncStatus(error ? 'error' : 'synced');
+    }, REMOTE_SAVE_DELAY);
+
+    return () => {
+      current = false;
+      clearTimeout(timer);
+    };
   }, [state, hydrated]);
 
   useEffect(() => {
@@ -312,7 +335,7 @@ export function AppProvider({ children }) {
   }, [state.theme]);
 
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
+    <AppContext.Provider value={{ state, dispatch, syncStatus }}>
       {children}
     </AppContext.Provider>
   );

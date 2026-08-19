@@ -4,8 +4,21 @@ import { exportState, importState } from '../utils/storage';
 import { BOARD_COLORS } from '../utils/helpers';
 import './Sidebar.css';
 
+const SYNC_LABELS = {
+  off: {
+    text: 'This browser only',
+    hint: 'Cloud sync is not configured, so boards are saved in this browser alone.',
+  },
+  saving: { text: 'Saving\u2026', hint: 'Saving your boards to the cloud.' },
+  synced: { text: 'Synced', hint: 'Your boards are saved to the cloud.' },
+  error: {
+    text: 'Not synced',
+    hint: "Couldn't reach the cloud. Boards are still saved in this browser. If the Supabase project is paused, restore it.",
+  },
+};
+
 export default function Sidebar() {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, syncStatus } = useApp();
   const [collapsed, setCollapsed] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(true);
   const [showNewBoard, setShowNewBoard] = useState(false);
@@ -332,6 +345,14 @@ export default function Sidebar() {
           </div>
 
           <div className="sidebar-footer">
+            <div
+              className={`sync-status ${syncStatus}`}
+              title={SYNC_LABELS[syncStatus].hint}
+            >
+              <span className="sync-dot" />
+              {SYNC_LABELS[syncStatus].text}
+            </div>
+
             <button className="sidebar-action" onClick={handleExport} title="Export data">
               ↓ Export
             </button>
