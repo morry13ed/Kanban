@@ -1,4 +1,11 @@
-import { createContext, useContext, useReducer, useEffect } from 'react';
+import {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useState,
+  useRef,
+} from 'react';
 import {
   loadState,
   saveState,
@@ -13,6 +20,8 @@ import {
 } from '../utils/helpers';
 
 const AppContext = createContext();
+
+const REMOTE_SAVE_DELAY = 800;
 
 const defaultState = {
   boards: [],
@@ -225,11 +234,24 @@ function reducer(state, action) {
     }
 
     // ── Import ──
-    case 'IMPORT_STATE':
+    // Used by both file import and the remote sync. Theme and filter are
+    // per-device, and the board you're currently looking at is kept selected
+    // as long as it still exists in the incoming data.
+    case 'IMPORT_STATE': {
+      const incoming = action.payload;
+      const boards = incoming.boards || [];
+      const activeStillExists = boards.some((b) => b.id === state.activeBoardId);
+
       return {
-        ...action.payload,
+        ...incoming,
+        boards,
+        activeBoardId: activeStillExists
+          ? state.activeBoardId
+          : incoming.activeBoardId ?? boards[0]?.id ?? null,
         theme: state.theme,
+        filter: activeStillExists ? state.filter : 'All',
       };
+    }
 
     default:
       return state;
@@ -242,6 +264,16 @@ export function AppProvider({ children }) {
     return saved ? { ...initial, ...saved } : initial;
   });
 
+  // Blocks remote writes until the first remote read has finished, so a fresh
+  // browser can't upload its empty state over what's already stored.
+  const [hydrated, setHydrated] = useState(false);
+
+  // Read inside the one-shot hydration effect without re-running it.
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
   useEffect(() => {
     saveState(state);
   }, [state]);
@@ -250,9 +282,18 @@ export function AppProvider({ children }) {
     let mounted = true;
     (async () => {
       const remote = await loadRemoteState();
-      if (remote && mounted) {
+      if (!mounted) return;
+
+      // If an empty browser reached the table first it will have stored an
+      // empty state. Don't let that come back and wipe boards we already have
+      // locally — the next save pushes the local ones up instead.
+      const remoteIsEmpty = !remote?.boards?.length;
+      const haveLocalBoards = stateRef.current.boards.length > 0;
+
+      if (remote && !(remoteIsEmpty && haveLocalBoards)) {
         dispatch({ type: 'IMPORT_STATE', payload: remote });
       }
+      setHydrated(true);
     })();
     return () => {
       mounted = false;
@@ -260,8 +301,11 @@ export function AppProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    saveRemoteState(state);
-  }, [state]);
+    if (!hydrated) return;
+    // Coalesce bursts of edits into a single write.
+    const timer = setTimeout(() => saveRemoteState(state), REMOTE_SAVE_DELAY);
+    return () => clearTimeout(timer);
+  }, [state, hydrated]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', state.theme);

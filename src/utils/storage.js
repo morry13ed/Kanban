@@ -37,12 +37,21 @@ export async function loadRemoteState() {
   return data?.state ?? null;
 }
 
+// Only the data worth carrying between devices. Theme and filter are
+// per-device UI preferences and stay in localStorage.
+function toSharedState(state) {
+  return {
+    boards: state.boards,
+    activeBoardId: state.activeBoardId,
+  };
+}
+
 export async function saveRemoteState(state) {
   if (!supabase) return;
   const { error } = await supabase.from('app_state').upsert(
     {
       id: REMOTE_STATE_ID,
-      state,
+      state: toSharedState(state),
     },
     { onConflict: 'id' }
   );
@@ -50,6 +59,10 @@ export async function saveRemoteState(state) {
   if (error) {
     console.error('Failed to save remote state:', error);
   }
+}
+
+export function isRemoteEnabled() {
+  return Boolean(supabase);
 }
 
 export function exportState(state) {
