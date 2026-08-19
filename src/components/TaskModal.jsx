@@ -9,7 +9,6 @@ import './TaskModal.css';
 
 export default function TaskModal({
   task,
-  columns,
   defaultColumnId,
   members = [],
   onSave,
@@ -18,10 +17,10 @@ export default function TaskModal({
   const [title, setTitle] = useState(task?.title || '');
   const [description, setDescription] = useState(task?.description || '');
   const [assignee, setAssignee] = useState(task?.assignee || 'Unassigned');
-  const [columnId, setColumnId] = useState(
-    task?.columnId || defaultColumnId || ''
-  );
   const [dueDate, setDueDate] = useState(task?.dueDate || '');
+  // Not editable here: new tasks land in the column you added them from, and
+  // existing ones move by dragging or the arrows on the card.
+  const columnId = task?.columnId || defaultColumnId || '';
   const [impact, setImpact] = useState(task?.impact ?? LEVEL_DEFAULT);
   const [time, setTime] = useState(task?.time ?? LEVEL_DEFAULT);
 
@@ -95,18 +94,13 @@ export default function TaskModal({
             </div>
 
             <div className="form-group">
-              <label htmlFor="task-column">Column</label>
-              <select
-                id="task-column"
-                value={columnId}
-                onChange={(e) => setColumnId(e.target.value)}
-              >
-                {columns.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              <label htmlFor="task-due">Due Date</label>
+              <input
+                id="task-due"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
             </div>
           </div>
 
@@ -145,16 +139,6 @@ export default function TaskModal({
           <div className="priority-readout">
             <span>Priority</span>
             <span className="priority-score">{priority}</span>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="task-due">Due Date</label>
-            <input
-              id="task-due"
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
           </div>
 
           <div className="modal-actions">

@@ -283,7 +283,6 @@ export default function Board() {
       {showTaskModal && (
         <TaskModal
           task={editingTask}
-          columns={board.columns}
           members={boardMembers}
           defaultColumnId={defaultColumnId || board.columns[0]?.id}
           onSave={handleSaveTask}
