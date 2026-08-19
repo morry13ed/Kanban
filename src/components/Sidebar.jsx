@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { exportState, importState } from '../utils/storage';
-import { BOARD_COLORS } from '../utils/helpers';
+import { BOARD_COLORS, countOpenTasks } from '../utils/helpers';
 import './Sidebar.css';
 
 const SYNC_LABELS = {
@@ -141,6 +141,7 @@ export default function Sidebar() {
                   {state.boards.map((board) => {
                     const isActive = state.activeBoardId === board.id;
                     const isEditing = editingBoardId === board.id;
+                    const openCount = countOpenTasks(board);
 
                     return (
                       <li
@@ -235,7 +236,19 @@ export default function Sidebar() {
                             </div>
                           </div>
                         ) : (
-                          <span className="board-name">{board.name}</span>
+                          <>
+                            <span className="board-name">{board.name}</span>
+                            {openCount > 0 && (
+                              <span
+                                className="board-count"
+                                title={`${openCount} open ${
+                                  openCount === 1 ? 'task' : 'tasks'
+                                }`}
+                              >
+                                {openCount}
+                              </span>
+                            )}
+                          </>
                         )}
                         <button
                           type="button"

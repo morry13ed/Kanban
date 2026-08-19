@@ -81,3 +81,17 @@ export function sortTasks(tasks, sortBy) {
       return tasks;
   }
 }
+
+// Open tasks = not archived and not sitting in the final column. The app
+// already treats the last column as done: the Complete button moves a task
+// there, and Archive is only offered once it is. Boards with a single column
+// have nowhere to be "done", so everything unarchived counts.
+export function countOpenTasks(board) {
+  const columns = board.columns || [];
+  const tasks = board.tasks || [];
+  const doneColumnId = columns.length > 1 ? columns[columns.length - 1].id : null;
+
+  return tasks.filter(
+    (t) => !t.archived && (doneColumnId === null || t.columnId !== doneColumnId)
+  ).length;
+}

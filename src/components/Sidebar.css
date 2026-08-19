@@ -139,6 +139,17 @@
   text-overflow: ellipsis;
 }
 
+/* Deliberately quiet: glanceable, never the thing you look at first. */
+.board-count {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text-secondary);
+  opacity: 0.55;
+  font-variant-numeric: tabular-nums;
+}
+
 .board-name-input {
   padding: 4px 6px;
   border-radius: 4px;
