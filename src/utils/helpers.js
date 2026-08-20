@@ -44,6 +44,15 @@ export function createTask({
   };
 }
 
+// Levels are continuous, so keep a sane number of decimals in storage.
+export function roundLevel(value) {
+  return Math.round(Number(value) * 100) / 100;
+}
+
+export function formatLevel(value) {
+  return Number(clampLevel(value)).toFixed(1);
+}
+
 function clampLevel(value) {
   const n = Number(value);
   if (!Number.isFinite(n)) return LEVEL_DEFAULT;

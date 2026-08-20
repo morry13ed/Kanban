@@ -4,6 +4,8 @@ import {
   LEVEL_MAX,
   LEVEL_DEFAULT,
   getPriority,
+  roundLevel,
+  formatLevel,
 } from '../utils/helpers';
 import './TaskModal.css';
 
@@ -37,8 +39,8 @@ export default function TaskModal({
       assignee,
       columnId,
       dueDate,
-      impact: Number(impact),
-      time: Number(time),
+      impact: roundLevel(impact),
+      time: roundLevel(time),
     });
   };
 
@@ -107,14 +109,14 @@ export default function TaskModal({
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="task-impact">
-                Impact <span className="level-value">{impact}</span>
+                Impact <span className="level-value">{formatLevel(impact)}</span>
               </label>
               <input
                 id="task-impact"
                 type="range"
                 min={LEVEL_MIN}
                 max={LEVEL_MAX}
-                step={1}
+                step="any"
                 value={impact}
                 onChange={(e) => setImpact(Number(e.target.value))}
               />
@@ -122,14 +124,14 @@ export default function TaskModal({
 
             <div className="form-group">
               <label htmlFor="task-time">
-                Time <span className="level-value">{time}</span>
+                Time <span className="level-value">{formatLevel(time)}</span>
               </label>
               <input
                 id="task-time"
                 type="range"
                 min={LEVEL_MIN}
                 max={LEVEL_MAX}
-                step={1}
+                step="any"
                 value={time}
                 onChange={(e) => setTime(Number(e.target.value))}
               />
