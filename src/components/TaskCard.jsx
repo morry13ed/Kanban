@@ -1,6 +1,24 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { formatLevel } from '../utils/helpers';
 import './TaskCard.css';
+
+function GaugeIcon() {
+  return (
+    <svg
+      className="gauge-icon"
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+    >
+      <path d="M2.5 12a5.5 5.5 0 0 1 11 0" />
+      <path d="M8 12l2.6-3.1" />
+    </svg>
+  );
+}
 
 export default function TaskCard({
   task,
@@ -145,6 +163,13 @@ export default function TaskCard({
             {task.assignee}
           </span>
         )}
+        <span
+          className="task-impact"
+          title={`Impact ${formatLevel(task.impact)}`}
+        >
+          <GaugeIcon />
+          {formatLevel(task.impact)}
+        </span>
         {task.dueDate && (
           <span className={`task-due ${isOverdue ? 'overdue' : ''}`}>
             {formatDate(task.dueDate)}

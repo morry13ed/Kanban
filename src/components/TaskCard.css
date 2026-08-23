@@ -121,6 +121,25 @@
   border-radius: 4px;
 }
 
+/* Matches .task-due exactly, with a gauge glyph standing in for a label. */
+.task-impact {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--hover);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gauge-icon {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+}
+
 .task-due.overdue {
   color: var(--danger);
   background: var(--danger-bg);
