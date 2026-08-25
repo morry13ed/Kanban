@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   LEVEL_MIN,
   LEVEL_MAX,
@@ -59,7 +59,20 @@ export default function TaskModal({
   const [isBug, setIsBug] = useState(task?.isBug ?? false);
   const [attachments, setAttachments] = useState(task?.attachments ?? []);
   const [attachError, setAttachError] = useState('');
+  const [preview, setPreview] = useState(null);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!preview) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setPreview(null);
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [preview]);
 
   const addFiles = async (files) => {
     const list = Array.from(files || []);
@@ -166,7 +179,14 @@ export default function TaskModal({
                 {attachments.map((file) => (
                   <span key={file.id} className="attachment-thumb">
                     {isImage(file.type) ? (
-                      <img src={file.dataUrl} alt={file.name} />
+                      <button
+                        type="button"
+                        className="attachment-open"
+                        title={`Open ${file.name}`}
+                        onClick={() => setPreview(file)}
+                      >
+                        <img src={file.dataUrl} alt={file.name} />
+                      </button>
                     ) : (
                       <FileGlyph name={file.name} />
                     )}
@@ -174,7 +194,10 @@ export default function TaskModal({
                       type="button"
                       className="attachment-remove"
                       title={`Remove ${file.name}`}
-                      onClick={() => removeAttachment(file.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeAttachment(file.id);
+                      }}
                     >
                       ×
                     </button>
@@ -278,6 +301,24 @@ export default function TaskModal({
             <span>Priority</span>
             <span className="priority-score">{priority}</span>
           </div>
+
+          {preview && (
+            <div className="lightbox" onClick={() => setPreview(null)}>
+              <img
+                src={preview.dataUrl}
+                alt={preview.name}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <button
+                type="button"
+                className="lightbox-close"
+                title="Close"
+                onClick={() => setPreview(null)}
+              >
+                ×
+              </button>
+            </div>
+          )}
 
           <div className="modal-actions">
             <button type="button" className="btn btn-ghost" onClick={onClose}>
