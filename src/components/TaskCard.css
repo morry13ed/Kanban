@@ -33,6 +33,18 @@
   bottom: -5px;
 }
 
+/* Finished work recedes. Still fully interactive — opacity doesn't affect
+   hit testing — and it comes back to full strength on hover so the move and
+   delete buttons are usable when you reach for them. */
+.task-card.dimmed {
+  opacity: 0.5;
+}
+
+.task-card.dimmed:hover,
+.task-card.dimmed:focus-within {
+  opacity: 1;
+}
+
 .task-card.dragging {
   opacity: 0.4;
   transform: rotate(2deg);

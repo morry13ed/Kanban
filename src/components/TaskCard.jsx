@@ -36,6 +36,7 @@ export default function TaskCard({
   isDragging,
   canReorder,
   onDropOnTask,
+  dimmed,
 }) {
   const { dispatch } = useApp();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -102,7 +103,7 @@ export default function TaskCard({
     <div
       className={`task-card ${isDragging ? 'dragging' : ''} ${
         dropEdge ? `drop-${dropEdge}` : ''
-      }`}
+      } ${dimmed ? 'dimmed' : ''}`}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.effectAllowed = 'move';

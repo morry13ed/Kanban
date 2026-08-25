@@ -4,6 +4,7 @@ import {
   SORT_OPTIONS,
   DEFAULT_SORT,
   DEFAULT_COLUMN_TYPE,
+  isSuccessColumn,
 } from '../utils/helpers';
 import ColumnTypeToggle from './ColumnTypeToggle';
 import TaskCard from './TaskCard';
@@ -274,6 +275,7 @@ export default function Column({
             isDragging={draggedTaskId === task.id}
             canReorder={canReorder && Boolean(draggedTaskId)}
             onDropOnTask={handleDropOnTask}
+            dimmed={isSuccessColumn(column)}
           />
         ))}
       </div>
