@@ -215,6 +215,11 @@ export default function TaskCard({
           <GaugeIcon />
           {formatLevel(task.impact)}
         </span>
+        {task.dueDate && (
+          <span className={`task-due ${isOverdue ? 'overdue' : ''}`}>
+            {formatDate(task.dueDate)}
+          </span>
+        )}
         {attachmentCount > 0 && (
           <span
             className="task-attachments"
@@ -224,11 +229,6 @@ export default function TaskCard({
           >
             <ClipIcon />
             {attachmentCount}
-          </span>
-        )}
-        {task.dueDate && (
-          <span className={`task-due ${isOverdue ? 'overdue' : ''}`}>
-            {formatDate(task.dueDate)}
           </span>
         )}
       </div>
