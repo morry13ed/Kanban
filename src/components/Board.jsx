@@ -294,16 +294,16 @@ export default function Board() {
                 />
                 <div className="add-column-actions">
                   <button
-                    className="btn btn-sm btn-primary"
-                    onClick={handleAddColumn}
-                  >
-                    Add
-                  </button>
-                  <button
                     className="btn btn-sm btn-ghost"
                     onClick={() => setAddingColumn(false)}
                   >
                     Cancel
+                  </button>
+                  <button
+                    className="btn btn-sm btn-primary"
+                    onClick={handleAddColumn}
+                  >
+                    Add
                   </button>
                 </div>
               </div>
