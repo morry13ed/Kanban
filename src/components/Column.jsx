@@ -76,6 +76,10 @@ export default function Column({
   const canReorder = sortBy === DEFAULT_SORT;
 
   const handleDropOnTask = (taskId, edge) => {
+    // The card's own drop handler stops propagation, so this column's
+    // onDrop never runs — clear the highlight here instead.
+    setDragOver(false);
+
     const index = tasks.findIndex((t) => t.id === taskId);
     const beforeTaskId =
       edge === 'top' ? taskId : tasks[index + 1]?.id ?? null;
@@ -149,6 +153,22 @@ export default function Column({
     });
     setShowDeleteConfirm(false);
   };
+
+  // A drop onto a card stops propagation so the column's own drop handler
+  // can't override the insert position — which also means it never gets to
+  // clear this highlight. Dragging always ends in a dragend or a drop
+  // somewhere, so watch for either. Also covers a cancelled drag.
+  useEffect(() => {
+    if (!dragOver) return;
+
+    const clear = () => setDragOver(false);
+    document.addEventListener('dragend', clear);
+    document.addEventListener('drop', clear);
+    return () => {
+      document.removeEventListener('dragend', clear);
+      document.removeEventListener('drop', clear);
+    };
+  }, [dragOver]);
 
   const handleDragOver = (e) => {
     e.preventDefault();
