@@ -125,6 +125,25 @@
   font-weight: 700;
 }
 
+/* Neutral, same geometry as the impact chip. */
+.task-attachments {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--hover);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.clip-icon {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+}
+
 .task-due {
   font-size: 11px;
   color: var(--text-secondary);

@@ -22,6 +22,23 @@ function BugIcon() {
   );
 }
 
+function ClipIcon() {
+  return (
+    <svg
+      className="clip-icon"
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M14.29 7.37l-6.13 6.13a4 4 0 0 1-5.66-5.66l6.13-6.13a2.67 2.67 0 0 1 3.77 3.77l-6.13 6.13a1.33 1.33 0 0 1-1.89-1.89l5.66-5.65" />
+    </svg>
+  );
+}
+
 function GaugeIcon() {
   return (
     <svg
@@ -66,6 +83,8 @@ export default function TaskCard({
   useEffect(() => {
     setTitleDraft(task.title);
   }, [task.title]);
+
+  const attachmentCount = task.attachments?.length ?? 0;
 
   const isOverdue =
     task.dueDate && new Date(task.dueDate) < new Date() && !task.archived;
@@ -196,6 +215,17 @@ export default function TaskCard({
           <GaugeIcon />
           {formatLevel(task.impact)}
         </span>
+        {attachmentCount > 0 && (
+          <span
+            className="task-attachments"
+            title={`${attachmentCount} attachment${
+              attachmentCount === 1 ? '' : 's'
+            }`}
+          >
+            <ClipIcon />
+            {attachmentCount}
+          </span>
+        )}
         {task.dueDate && (
           <span className={`task-due ${isOverdue ? 'overdue' : ''}`}>
             {formatDate(task.dueDate)}
