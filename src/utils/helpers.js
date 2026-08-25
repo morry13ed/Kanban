@@ -30,6 +30,7 @@ export function createTask({
   impact = LEVEL_DEFAULT,
   time = LEVEL_DEFAULT,
   isBug = false,
+  attachments = [],
 }) {
   return {
     id: generateId(),
@@ -42,6 +43,7 @@ export function createTask({
     impact,
     time,
     isBug,
+    attachments,
     archived: false,
   };
 }

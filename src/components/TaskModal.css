@@ -99,6 +99,116 @@
   min-height: 60px;
 }
 
+/* ── Description attachments ── */
+.description-field {
+  position: relative;
+  display: flex;
+}
+
+/* Room at the bottom so typed text never runs under the attachment bar. */
+.description-field textarea {
+  width: 100%;
+  padding-bottom: 40px;
+  min-height: 92px;
+}
+
+.attachment-bar {
+  position: absolute;
+  left: 7px;
+  bottom: 7px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: calc(100% - 14px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.attachment-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.attachment-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.attachment-add:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.attach-icon {
+  width: 18px;
+  height: 15px;
+}
+
+.attachment-thumb {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.attachment-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.attachment-ext {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.attachment-remove {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 14px;
+  height: 14px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--danger);
+  color: white;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.attachment-thumb:hover .attachment-remove {
+  display: inline-flex;
+}
+
+.attachment-error {
+  font-size: 11px;
+  color: var(--danger);
+}
+
 .form-checkbox {
   display: flex;
   align-items: center;

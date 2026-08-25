@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   LEVEL_MIN,
   LEVEL_MAX,
@@ -7,7 +7,38 @@ import {
   roundLevel,
   formatLevel,
 } from '../utils/helpers';
+import {
+  ACCEPTED_TYPES,
+  fileToAttachment,
+  imageFilesFromPaste,
+  isImage,
+} from '../utils/attachments';
 import './TaskModal.css';
+
+function ImagePlusIcon() {
+  return (
+    <svg
+      className="attach-icon"
+      viewBox="0 0 20 16"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="1" y="2.5" width="11.5" height="11" rx="2.5" />
+      <circle cx="5" cy="6.3" r="1.15" />
+      <path d="M2 11.4 5.6 8.2l2.4 2.1 2-1.8 2.5 2.4" />
+      <path d="M16.5 6.2v5.6M13.7 9h5.6" />
+    </svg>
+  );
+}
+
+function FileGlyph({ name }) {
+  const ext = (name.split('.').pop() || '').slice(0, 4).toUpperCase();
+  return <span className="attachment-ext">{ext || 'FILE'}</span>;
+}
 
 export default function TaskModal({
   task,
@@ -26,6 +57,51 @@ export default function TaskModal({
   const [impact, setImpact] = useState(task?.impact ?? LEVEL_DEFAULT);
   const [time, setTime] = useState(task?.time ?? LEVEL_DEFAULT);
   const [isBug, setIsBug] = useState(task?.isBug ?? false);
+  const [attachments, setAttachments] = useState(task?.attachments ?? []);
+  const [attachError, setAttachError] = useState('');
+  const fileInputRef = useRef(null);
+
+  const addFiles = async (files) => {
+    const list = Array.from(files || []);
+    if (list.length === 0) return;
+
+    setAttachError('');
+    const accepted = [];
+    const failures = [];
+
+    for (const file of list) {
+      try {
+        accepted.push(await fileToAttachment(file));
+      } catch (err) {
+        failures.push(err.message);
+      }
+    }
+
+    if (accepted.length > 0) {
+      setAttachments((current) => [...current, ...accepted]);
+    }
+    if (failures.length > 0) setAttachError(failures[0]);
+  };
+
+  const handleFileInput = (e) => {
+    addFiles(e.target.files);
+    // Let the same file be picked again after removing it.
+    e.target.value = '';
+  };
+
+  // Only intercept a paste that actually carries an image; text pastes are
+  // left alone.
+  const handlePaste = (e) => {
+    const images = imageFilesFromPaste(e);
+    if (images.length === 0) return;
+    e.preventDefault();
+    addFiles(images);
+  };
+
+  const removeAttachment = (id) => {
+    setAttachments((current) => current.filter((a) => a.id !== id));
+    setAttachError('');
+  };
 
   const assigneeOptions = ['Unassigned', ...members];
   const priority = getPriority({ impact, time });
@@ -43,12 +119,17 @@ export default function TaskModal({
       impact: roundLevel(impact),
       time: roundLevel(time),
       isBug,
+      attachments,
     });
   };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        onPaste={handlePaste}
+      >
         <div className="modal-header">
           <h3>{task ? 'Edit Task' : 'New Task'}</h3>
           <button className="modal-close" onClick={onClose}>
@@ -72,13 +153,56 @@ export default function TaskModal({
 
           <div className="form-group">
             <label htmlFor="task-desc">Description</label>
-            <textarea
-              id="task-desc"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional description..."
-              rows={3}
-            />
+            <div className="description-field">
+              <textarea
+                id="task-desc"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Optional description..."
+                rows={3}
+              />
+
+              <div className="attachment-bar">
+                {attachments.map((file) => (
+                  <span key={file.id} className="attachment-thumb">
+                    {isImage(file.type) ? (
+                      <img src={file.dataUrl} alt={file.name} />
+                    ) : (
+                      <FileGlyph name={file.name} />
+                    )}
+                    <button
+                      type="button"
+                      className="attachment-remove"
+                      title={`Remove ${file.name}`}
+                      onClick={() => removeAttachment(file.id)}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+
+                <button
+                  type="button"
+                  className="attachment-add"
+                  title="Add an image or PDF"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <ImagePlusIcon />
+                </button>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ACCEPTED_TYPES}
+                  multiple
+                  onChange={handleFileInput}
+                  style={{ display: 'none' }}
+                />
+              </div>
+            </div>
+            {attachError && (
+              <span className="attachment-error">{attachError}</span>
+            )}
           </div>
 
           <label className="form-checkbox">
