@@ -9,9 +9,9 @@ export function createBoard(name, color = '#3b82f6', members = []) {
     color,
     members,
     columns: [
-      { id: generateId(), name: 'To Do', sortBy: DEFAULT_SORT },
-      { id: generateId(), name: 'In Progress', sortBy: DEFAULT_SORT },
-      { id: generateId(), name: 'Done', sortBy: DEFAULT_SORT },
+      { id: generateId(), name: 'To Do', sortBy: DEFAULT_SORT, type: DEFAULT_COLUMN_TYPE },
+      { id: generateId(), name: 'In Progress', sortBy: DEFAULT_SORT, type: DEFAULT_COLUMN_TYPE },
+      { id: generateId(), name: 'Done', sortBy: DEFAULT_SORT, type: DEFAULT_COLUMN_TYPE },
     ],
     tasks: [],
   };
@@ -101,6 +101,27 @@ export const SORT_OPTIONS = [
 ];
 
 export const DEFAULT_SORT = 'manual';
+
+export const COLUMN_REGULAR = 'regular';
+export const COLUMN_SUCCESS = 'success';
+export const DEFAULT_COLUMN_TYPE = COLUMN_REGULAR;
+
+export const COLUMN_TYPES = [
+  {
+    value: COLUMN_REGULAR,
+    label: 'Regular',
+    hint: 'Nothing special happens when a task lands here.',
+  },
+  {
+    value: COLUMN_SUCCESS,
+    label: 'Success',
+    hint: 'Tasks moved into this column set off confetti.',
+  },
+];
+
+export function isSuccessColumn(column) {
+  return column?.type === COLUMN_SUCCESS;
+}
 
 export function sortTasks(tasks, sortBy) {
   if (!sortBy || sortBy === DEFAULT_SORT) return tasks;

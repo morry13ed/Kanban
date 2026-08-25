@@ -51,6 +51,21 @@
   border-radius: 10px;
 }
 
+/* While editing, the header stacks so the toggle sits under the name field.
+   The taller header pushes the task list down, which is intended. */
+.column-header.editing {
+  align-items: flex-start;
+}
+
+.column-edit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
 .column-name-input {
   padding: 4px 8px;
   border: 1px solid var(--accent);

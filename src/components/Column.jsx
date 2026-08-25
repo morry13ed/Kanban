@@ -1,6 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
-import { SORT_OPTIONS, DEFAULT_SORT } from '../utils/helpers';
+import {
+  SORT_OPTIONS,
+  DEFAULT_SORT,
+  DEFAULT_COLUMN_TYPE,
+} from '../utils/helpers';
+import ColumnTypeToggle from './ColumnTypeToggle';
 import TaskCard from './TaskCard';
 import ConfirmDialog from './ConfirmDialog';
 import './Column.css';
@@ -30,6 +35,16 @@ export default function Column({
   const [dragOver, setDragOver] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
   const sortRef = useRef(null);
+  const editRef = useRef(null);
+
+  // Read the in-progress name from the outside-click handler without making
+  // that effect re-subscribe on every keystroke.
+  const draftNameRef = useRef(column.name);
+  useEffect(() => {
+    draftNameRef.current = columnName;
+  }, [columnName]);
+
+  const columnType = column.type || DEFAULT_COLUMN_TYPE;
 
   const sortBy = column.sortBy || DEFAULT_SORT;
   const activeSort = SORT_OPTIONS.find((o) => o.value === sortBy);
@@ -81,8 +96,8 @@ export default function Column({
     setShowSortMenu(false);
   };
 
-  const handleRename = () => {
-    const name = columnName.trim();
+  const handleRename = useCallback(() => {
+    const name = draftNameRef.current.trim();
     if (name && name !== column.name) {
       dispatch({
         type: 'RENAME_COLUMN',
@@ -92,7 +107,39 @@ export default function Column({
       setColumnName(column.name);
     }
     setEditing(false);
+  }, [boardId, column.id, column.name, dispatch]);
+
+  const handleTypeChange = (nextType) => {
+    dispatch({
+      type: 'SET_COLUMN_TYPE',
+      payload: { boardId, columnId: column.id, columnType: nextType },
+    });
   };
+
+  // The editor holds a name field and a toggle, so dismissal is scoped to the
+  // whole thing. Blurring the input on the way to the toggle must not close it.
+  useEffect(() => {
+    if (!editing) return;
+
+    const handlePointerDown = (e) => {
+      if (editRef.current && !editRef.current.contains(e.target)) {
+        handleRename();
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setColumnName(column.name);
+        setEditing(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [editing, handleRename, column.name]);
 
   const handleDeleteColumn = () => {
     dispatch({
@@ -119,28 +166,31 @@ export default function Column({
 
   return (
     <div
+      data-column-id={column.id}
       className={`column ${dragOver ? 'drag-over' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="column-header">
+      <div className={`column-header ${editing ? 'editing' : ''}`}>
         {editing ? (
-          <input
-            type="text"
-            value={columnName}
-            onChange={(e) => setColumnName(e.target.value)}
-            onBlur={handleRename}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleRename();
-              if (e.key === 'Escape') {
-                setColumnName(column.name);
-                setEditing(false);
-              }
-            }}
-            autoFocus
-            className="column-name-input"
-          />
+          <div className="column-edit" ref={editRef}>
+            <input
+              type="text"
+              value={columnName}
+              onChange={(e) => setColumnName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleRename();
+              }}
+              autoFocus
+              className="column-name-input"
+            />
+            <ColumnTypeToggle
+              small
+              value={columnType}
+              onChange={handleTypeChange}
+            />
+          </div>
         ) : (
           <h3
             className="column-name"

@@ -152,3 +152,11 @@ html, body {
   background: var(--accent);
   color: white;
 }
+
+/* ── Confetti overlay ── */
+.confetti-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 200;
+}

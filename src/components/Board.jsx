@@ -1,7 +1,14 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { sortTasks, DEFAULT_SORT } from '../utils/helpers';
+import {
+  sortTasks,
+  DEFAULT_SORT,
+  DEFAULT_COLUMN_TYPE,
+  isSuccessColumn,
+} from '../utils/helpers';
+import { fireConfetti } from '../utils/confetti';
 import Column from './Column';
+import ColumnTypeToggle from './ColumnTypeToggle';
 import TaskModal from './TaskModal';
 import ConfirmDialog from './ConfirmDialog';
 import './Board.css';
@@ -14,6 +21,7 @@ export default function Board() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [addingColumn, setAddingColumn] = useState(false);
   const [newColumnName, setNewColumnName] = useState('');
+  const [newColumnType, setNewColumnType] = useState(DEFAULT_COLUMN_TYPE);
   const [draggedTaskId, setDraggedTaskId] = useState(null);
 
   const board = state.boards.find((b) => b.id === state.activeBoardId);
@@ -96,10 +104,27 @@ export default function Board() {
     if (!name) return;
     dispatch({
       type: 'ADD_COLUMN',
-      payload: { boardId: board.id, name },
+      payload: { boardId: board.id, name, type: newColumnType },
     });
     setNewColumnName('');
+    setNewColumnType(DEFAULT_COLUMN_TYPE);
     setAddingColumn(false);
+  };
+
+  // Fires only on an actual transfer into a success column, so nudging a task
+  // around inside one stays quiet.
+  const celebrateIfSuccess = (taskId, targetColumnId) => {
+    const task = board.tasks.find((t) => t.id === taskId);
+    if (!task || task.columnId === targetColumnId) return;
+
+    const target = board.columns.find((c) => c.id === targetColumnId);
+    if (!isSuccessColumn(target)) return;
+
+    const el = document.querySelector(`[data-column-id="${targetColumnId}"]`);
+    const rect = el?.getBoundingClientRect();
+    fireConfetti(
+      rect ? { x: rect.left + rect.width / 2, y: rect.top + 60 } : undefined
+    );
   };
 
   const handleMoveTask = (taskId, direction) => {
@@ -108,6 +133,8 @@ export default function Board() {
     const colIndex = board.columns.findIndex((c) => c.id === task.columnId);
     const targetIndex = colIndex + direction;
     if (targetIndex < 0 || targetIndex >= board.columns.length) return;
+
+    celebrateIfSuccess(taskId, board.columns[targetIndex].id);
     dispatch({
       type: 'MOVE_TASK',
       payload: {
@@ -121,6 +148,8 @@ export default function Board() {
   const handleCompleteTask = (taskId) => {
     const lastColumn = board.columns[board.columns.length - 1];
     if (!lastColumn) return;
+
+    celebrateIfSuccess(taskId, lastColumn.id);
     dispatch({
       type: 'MOVE_TASK',
       payload: {
@@ -164,6 +193,7 @@ export default function Board() {
       return;
     }
 
+    celebrateIfSuccess(draggedTaskId, columnId);
     dispatch({
       type: 'REORDER_TASK',
       payload: {
@@ -257,16 +287,25 @@ export default function Board() {
                 autoFocus
                 className="add-column-input"
               />
-              <div className="add-column-actions">
-                <button className="btn btn-sm btn-primary" onClick={handleAddColumn}>
-                  Add
-                </button>
-                <button
-                  className="btn btn-sm btn-ghost"
-                  onClick={() => setAddingColumn(false)}
-                >
-                  Cancel
-                </button>
+              <div className="add-column-footer">
+                <ColumnTypeToggle
+                  value={newColumnType}
+                  onChange={setNewColumnType}
+                />
+                <div className="add-column-actions">
+                  <button
+                    className="btn btn-sm btn-primary"
+                    onClick={handleAddColumn}
+                  >
+                    Add
+                  </button>
+                  <button
+                    className="btn btn-sm btn-ghost"
+                    onClick={() => setAddingColumn(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
           ) : (

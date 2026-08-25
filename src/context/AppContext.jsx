@@ -18,6 +18,7 @@ import {
   createTask,
   generateId,
   DEFAULT_SORT,
+  DEFAULT_COLUMN_TYPE,
 } from '../utils/helpers';
 
 const AppContext = createContext();
@@ -94,6 +95,7 @@ function reducer(state, action) {
                     id: generateId(),
                     name: action.payload.name,
                     sortBy: DEFAULT_SORT,
+                    type: action.payload.type || DEFAULT_COLUMN_TYPE,
                   },
                 ],
               }
@@ -130,6 +132,23 @@ function reducer(state, action) {
                 ),
                 tasks: b.tasks.filter(
                   (t) => t.columnId !== action.payload.columnId
+                ),
+              }
+            : b
+        ),
+      };
+    }
+    case 'SET_COLUMN_TYPE': {
+      return {
+        ...state,
+        boards: state.boards.map((b) =>
+          b.id === action.payload.boardId
+            ? {
+                ...b,
+                columns: b.columns.map((c) =>
+                  c.id === action.payload.columnId
+                    ? { ...c, type: action.payload.columnType }
+                    : c
                 ),
               }
             : b

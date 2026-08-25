@@ -159,9 +159,18 @@
   border-color: var(--accent);
 }
 
+.add-column-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .add-column-actions {
   display: flex;
   gap: 6px;
+  margin-left: auto;
 }
 
 @media (max-width: 768px) {
