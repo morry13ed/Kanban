@@ -3,6 +3,25 @@ import { useApp } from '../context/AppContext';
 import { formatLevel } from '../utils/helpers';
 import './TaskCard.css';
 
+function BugIcon() {
+  return (
+    <svg className="bug-icon" viewBox="0 0 16 16" aria-hidden="true">
+      {/* Antennae and legs stay thin; the body is solid so the silhouette
+          still reads as a beetle at 11px rather than a starburst. */}
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      >
+        <path d="M5.7 2.7 7.1 4.6M10.3 2.7 8.9 4.6" />
+        <path d="M4.7 8.2H2.1M4.9 11.3 2.9 12.6M11.3 8.2h2.6M11.1 11.3l2 1.3" />
+      </g>
+      <rect x="4.7" y="4.5" width="6.6" height="9" rx="3.3" fill="currentColor" />
+    </svg>
+  );
+}
+
 function GaugeIcon() {
   return (
     <svg
@@ -156,6 +175,12 @@ export default function TaskCard({
       )}
 
       <div className="task-meta">
+        {task.isBug && (
+          <span className="task-bug" title="Bug">
+            <BugIcon />
+            Bug
+          </span>
+        )}
         {task.assignee !== 'Unassigned' && (
           <span className="task-assignee">
             <span className="assignee-avatar">

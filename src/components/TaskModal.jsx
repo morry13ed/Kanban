@@ -25,6 +25,7 @@ export default function TaskModal({
   const columnId = task?.columnId || defaultColumnId || '';
   const [impact, setImpact] = useState(task?.impact ?? LEVEL_DEFAULT);
   const [time, setTime] = useState(task?.time ?? LEVEL_DEFAULT);
+  const [isBug, setIsBug] = useState(task?.isBug ?? false);
 
   const assigneeOptions = ['Unassigned', ...members];
   const priority = getPriority({ impact, time });
@@ -41,6 +42,7 @@ export default function TaskModal({
       dueDate,
       impact: roundLevel(impact),
       time: roundLevel(time),
+      isBug,
     });
   };
 
@@ -78,6 +80,15 @@ export default function TaskModal({
               rows={3}
             />
           </div>
+
+          <label className="form-checkbox">
+            <input
+              type="checkbox"
+              checked={isBug}
+              onChange={(e) => setIsBug(e.target.checked)}
+            />
+            Bug
+          </label>
 
           <div className="form-row">
             <div className="form-group">

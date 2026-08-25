@@ -29,6 +29,7 @@ export function createTask({
   dueDate = '',
   impact = LEVEL_DEFAULT,
   time = LEVEL_DEFAULT,
+  isBug = false,
 }) {
   return {
     id: generateId(),
@@ -40,6 +41,7 @@ export function createTask({
     dueDate,
     impact,
     time,
+    isBug,
     archived: false,
   };
 }
