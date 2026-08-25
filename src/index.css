@@ -9,6 +9,7 @@
 
 /* ── Theme: Dark (default) ── */
 [data-theme='dark'] {
+  color-scheme: dark;
   --bg: #0f1117;
   --sidebar-bg: #161821;
   --column-bg: #1a1d2b;
@@ -33,6 +34,7 @@
 
 /* ── Theme: Light ── */
 [data-theme='light'] {
+  color-scheme: light;
   --bg: #f5f6fa;
   --sidebar-bg: #ffffff;
   --column-bg: #ebedf3;

@@ -72,8 +72,6 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
 }
 
 .form-group input,
@@ -108,8 +106,6 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
   cursor: pointer;
   user-select: none;
   align-self: flex-start;
@@ -210,8 +206,6 @@
   background: var(--hover);
   font-size: 12px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
   color: var(--text-secondary);
 }
 

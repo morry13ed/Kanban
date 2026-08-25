@@ -107,7 +107,7 @@ export default function TaskModal({
             </div>
 
             <div className="form-group">
-              <label htmlFor="task-due">Due Date</label>
+              <label htmlFor="task-due">Due date</label>
               <input
                 id="task-due"
                 type="date"
@@ -134,11 +134,12 @@ export default function TaskModal({
             </div>
 
             <div className="form-group">
-              <label htmlFor="task-time">
-                Time <span className="level-value">{formatLevel(time)}</span>
+              <label htmlFor="task-duration">
+                Duration{' '}
+                <span className="level-value">{formatLevel(time)}</span>
               </label>
               <input
-                id="task-time"
+                id="task-duration"
                 type="range"
                 min={LEVEL_MIN}
                 max={LEVEL_MAX}
