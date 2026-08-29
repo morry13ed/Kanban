@@ -6,7 +6,10 @@ import {
   getPriority,
   roundLevel,
   formatLevel,
+  STATUS_NONE,
+  TASK_STATUS_OPTIONS,
 } from '../utils/helpers';
+import SegmentedControl from './SegmentedControl';
 import {
   ACCEPTED_TYPES,
   fileToAttachment,
@@ -57,6 +60,7 @@ export default function TaskModal({
   const [impact, setImpact] = useState(task?.impact ?? LEVEL_DEFAULT);
   const [time, setTime] = useState(task?.time ?? LEVEL_DEFAULT);
   const [isBug, setIsBug] = useState(task?.isBug ?? false);
+  const [status, setStatus] = useState(task?.status ?? STATUS_NONE);
   const [attachments, setAttachments] = useState(task?.attachments ?? []);
   const [attachError, setAttachError] = useState('');
   const [preview, setPreview] = useState(null);
@@ -133,6 +137,7 @@ export default function TaskModal({
       time: roundLevel(time),
       isBug,
       attachments,
+      status,
     });
   };
 
@@ -228,14 +233,26 @@ export default function TaskModal({
             )}
           </div>
 
-          <label className="form-checkbox">
-            <input
-              type="checkbox"
-              checked={isBug}
-              onChange={(e) => setIsBug(e.target.checked)}
-            />
-            Bug
-          </label>
+          <div className="form-inline-row">
+            <label className="form-checkbox">
+              <input
+                type="checkbox"
+                checked={isBug}
+                onChange={(e) => setIsBug(e.target.checked)}
+              />
+              Bug
+            </label>
+
+            <div className="form-status">
+              <span className="form-status-label">Status</span>
+              <SegmentedControl
+                small
+                options={TASK_STATUS_OPTIONS}
+                value={status}
+                onChange={setStatus}
+              />
+            </div>
+          </div>
 
           <div className="form-row">
             <div className="form-group">

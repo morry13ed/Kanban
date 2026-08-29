@@ -4,11 +4,12 @@ import {
   sortTasks,
   DEFAULT_SORT,
   DEFAULT_COLUMN_TYPE,
+  COLUMN_TYPES,
   isSuccessColumn,
 } from '../utils/helpers';
 import { fireConfetti } from '../utils/confetti';
 import Column from './Column';
-import ColumnTypeToggle from './ColumnTypeToggle';
+import SegmentedControl from './SegmentedControl';
 import TaskModal from './TaskModal';
 import ConfirmDialog from './ConfirmDialog';
 import './Board.css';
@@ -288,7 +289,8 @@ export default function Board() {
                 className="add-column-input"
               />
               <div className="add-column-footer">
-                <ColumnTypeToggle
+                <SegmentedControl
+                  options={COLUMN_TYPES}
                   value={newColumnType}
                   onChange={setNewColumnType}
                 />

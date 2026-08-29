@@ -24,6 +24,7 @@
   --accent: #3b82f6;
   --accent-hover: #2563eb;
   --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.14);
   --danger: #ef4444;
   --danger-bg: rgba(239, 68, 68, 0.12);
   --warning: #fbbf24;
@@ -48,7 +49,8 @@
   --text-secondary: #6b7085;
   --accent: #3b82f6;
   --accent-hover: #2563eb;
-  --success: #10b981;
+  --success: #059669;
+  --success-bg: rgba(16, 185, 129, 0.14);
   --danger: #ef4444;
   --danger-bg: rgba(239, 68, 68, 0.08);
   --warning: #b45309;

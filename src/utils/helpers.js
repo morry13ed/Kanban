@@ -31,6 +31,7 @@ export function createTask({
   time = LEVEL_DEFAULT,
   isBug = false,
   attachments = [],
+  status = STATUS_NONE,
 }) {
   return {
     id: generateId(),
@@ -44,6 +45,7 @@ export function createTask({
     time,
     isBug,
     attachments,
+    status,
     archived: false,
   };
 }
@@ -126,6 +128,25 @@ export const COLUMN_TYPES = [
 export function isSuccessColumn(column) {
   return column?.type === COLUMN_SUCCESS;
 }
+
+// Purely visual: a hint for the reader about whether work is moving.
+export const STATUS_NONE = 'none';
+export const STATUS_ACTIVE = 'active';
+export const STATUS_PAUSED = 'paused';
+
+export const TASK_STATUS_OPTIONS = [
+  { value: STATUS_NONE, label: 'Off', hint: 'No status shown on the card.' },
+  {
+    value: STATUS_ACTIVE,
+    label: 'Active',
+    hint: 'Shows a play chip on the card.',
+  },
+  {
+    value: STATUS_PAUSED,
+    label: 'Paused',
+    hint: 'Shows a pause chip on the card.',
+  },
+];
 
 export function sortTasks(tasks, sortBy) {
   if (!sortBy || sortBy === DEFAULT_SORT) return tasks;

@@ -4,9 +4,10 @@ import {
   SORT_OPTIONS,
   DEFAULT_SORT,
   DEFAULT_COLUMN_TYPE,
+  COLUMN_TYPES,
   isSuccessColumn,
 } from '../utils/helpers';
-import ColumnTypeToggle from './ColumnTypeToggle';
+import SegmentedControl from './SegmentedControl';
 import TaskCard from './TaskCard';
 import ConfirmDialog from './ConfirmDialog';
 import './Column.css';
@@ -206,8 +207,9 @@ export default function Column({
               autoFocus
               className="column-name-input"
             />
-            <ColumnTypeToggle
+            <SegmentedControl
               small
+              options={COLUMN_TYPES}
               value={columnType}
               onChange={handleTypeChange}
             />

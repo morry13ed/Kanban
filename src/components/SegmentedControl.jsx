@@ -1,12 +1,16 @@
-import { COLUMN_TYPES } from '../utils/helpers';
-import './ColumnTypeToggle.css';
+import './SegmentedControl.css';
 
-// Two sizes: the default sits in the add-column form, `small` in the inline
-// column editor where it has to fit inside the header.
-export default function ColumnTypeToggle({ value, onChange, small = false }) {
+// Generic pill toggle. Two sizes: the default sits in forms, `small` fits
+// inline inside a column header. `options` is [{ value, label, hint }].
+export default function SegmentedControl({
+  options,
+  value,
+  onChange,
+  small = false,
+}) {
   return (
     <div className={`type-toggle ${small ? 'small' : ''}`}>
-      {COLUMN_TYPES.map((option) => (
+      {options.map((option) => (
         <button
           key={option.value}
           type="button"

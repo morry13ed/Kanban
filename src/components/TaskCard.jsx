@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { formatLevel } from '../utils/helpers';
+import {
+  formatLevel,
+  STATUS_ACTIVE,
+  STATUS_PAUSED,
+} from '../utils/helpers';
 import './TaskCard.css';
 
 function BugIcon() {
@@ -18,6 +22,23 @@ function BugIcon() {
         <path d="M4.7 8.2H2.1M4.9 11.3 2.9 12.6M11.3 8.2h2.6M11.1 11.3l2 1.3" />
       </g>
       <rect x="4.7" y="4.5" width="6.6" height="9" rx="3.3" fill="currentColor" />
+    </svg>
+  );
+}
+
+function PlayIcon() {
+  return (
+    <svg className="status-icon" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M4.5 2.8v10.4c0 .8.9 1.3 1.6.9l8-5.2c.6-.4.6-1.4 0-1.8l-8-5.2c-.7-.4-1.6.1-1.6.9z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function PauseIcon() {
+  return (
+    <svg className="status-icon" viewBox="0 0 16 16" aria-hidden="true">
+      <rect x="3.5" y="2.5" width="3.4" height="11" rx="1.2" fill="currentColor" />
+      <rect x="9.1" y="2.5" width="3.4" height="11" rx="1.2" fill="currentColor" />
     </svg>
   );
 }
@@ -85,6 +106,23 @@ export default function TaskCard({
   }, [task.title]);
 
   const attachmentCount = task.attachments?.length ?? 0;
+  const status = task.status;
+
+  // Click flips active <-> paused without a trip through the modal. Turning
+  // the hint off entirely lives in the edit dialog.
+  const toggleStatus = (e) => {
+    e.stopPropagation();
+    dispatch({
+      type: 'UPDATE_TASK',
+      payload: {
+        boardId,
+        taskId: task.id,
+        updates: {
+          status: status === STATUS_ACTIVE ? STATUS_PAUSED : STATUS_ACTIVE,
+        },
+      },
+    });
+  };
 
   const isOverdue =
     task.dueDate && new Date(task.dueDate) < new Date() && !task.archived;
@@ -194,6 +232,20 @@ export default function TaskCard({
       )}
 
       <div className="task-meta">
+        {(status === STATUS_ACTIVE || status === STATUS_PAUSED) && (
+          <button
+            type="button"
+            className={`task-status ${status}`}
+            title={
+              status === STATUS_ACTIVE
+                ? 'Active — click to pause'
+                : 'Paused — click to resume'
+            }
+            onClick={toggleStatus}
+          >
+            {status === STATUS_ACTIVE ? <PlayIcon /> : <PauseIcon />}
+          </button>
+        )}
         {task.isBug && (
           <span className="task-bug" title="Bug">
             <BugIcon />

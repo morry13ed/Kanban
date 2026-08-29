@@ -19,6 +19,8 @@ import {
   generateId,
   DEFAULT_SORT,
   DEFAULT_COLUMN_TYPE,
+  STATUS_NONE,
+  isSuccessColumn,
 } from '../utils/helpers';
 
 const AppContext = createContext();
@@ -228,16 +230,26 @@ function reducer(state, action) {
       const { boardId, taskId, targetColumnId } = action.payload;
       return {
         ...state,
-        boards: state.boards.map((b) =>
-          b.id === boardId
-            ? {
-                ...b,
-                tasks: b.tasks.map((t) =>
-                  t.id === taskId ? { ...t, columnId: targetColumnId } : t
-                ),
-              }
-            : b
-        ),
+        boards: state.boards.map((b) => {
+          if (b.id !== boardId) return b;
+          // Landing in a success column means the work is finished, so the
+          // active/paused hint comes off.
+          const done = isSuccessColumn(
+            b.columns.find((c) => c.id === targetColumnId)
+          );
+          return {
+            ...b,
+            tasks: b.tasks.map((t) =>
+              t.id === taskId
+                ? {
+                    ...t,
+                    columnId: targetColumnId,
+                    ...(done ? { status: STATUS_NONE } : {}),
+                  }
+                : t
+            ),
+          };
+        }),
       };
     }
     // Moves a task to targetColumnId and places it directly before
@@ -255,7 +267,14 @@ function reducer(state, action) {
           if (!moving) return b;
 
           const rest = b.tasks.filter((t) => t.id !== taskId);
-          const moved = { ...moving, columnId: targetColumnId };
+          const done = isSuccessColumn(
+            b.columns.find((c) => c.id === targetColumnId)
+          );
+          const moved = {
+            ...moving,
+            columnId: targetColumnId,
+            ...(done ? { status: STATUS_NONE } : {}),
+          };
           const at = beforeTaskId
             ? rest.findIndex((t) => t.id === beforeTaskId)
             : -1;
