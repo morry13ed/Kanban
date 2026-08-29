@@ -233,26 +233,14 @@ export default function TaskModal({
             )}
           </div>
 
-          <div className="form-inline-row">
-            <label className="form-checkbox">
-              <input
-                type="checkbox"
-                checked={isBug}
-                onChange={(e) => setIsBug(e.target.checked)}
-              />
-              Bug
-            </label>
-
-            <div className="form-status">
-              <span className="form-status-label">Status</span>
-              <SegmentedControl
-                small
-                options={TASK_STATUS_OPTIONS}
-                value={status}
-                onChange={setStatus}
-              />
-            </div>
-          </div>
+          <label className="form-checkbox">
+            <input
+              type="checkbox"
+              checked={isBug}
+              onChange={(e) => setIsBug(e.target.checked)}
+            />
+            Bug
+          </label>
 
           <div className="form-row">
             <div className="form-group">
@@ -317,6 +305,16 @@ export default function TaskModal({
           <div className="priority-readout">
             <span>Priority</span>
             <span className="priority-score">{priority}</span>
+          </div>
+
+          <div className="form-status">
+            <span className="form-status-label">Status</span>
+            <SegmentedControl
+              small
+              options={TASK_STATUS_OPTIONS}
+              value={status}
+              onChange={setStatus}
+            />
           </div>
 
           {preview && (

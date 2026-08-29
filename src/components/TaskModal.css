@@ -271,17 +271,12 @@
   color: var(--danger);
 }
 
-.form-inline-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
 .form-status {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
+  margin-top: -6px;
 }
 
 .form-status-label {
