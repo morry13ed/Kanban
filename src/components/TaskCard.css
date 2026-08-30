@@ -242,16 +242,40 @@
   background: var(--danger-bg);
 }
 
+/* Collapsed to zero height at rest so the card wraps its content; hovering
+   (or tabbing into) the card expands the row and nudges the cards below.
+   focus-within keeps the buttons reachable by keyboard. */
 .task-actions {
   display: flex;
   gap: 4px;
-  margin-top: 10px;
+  max-height: 0;
+  margin-top: 0;
+  overflow: hidden;
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: max-height 0.2s ease, margin-top 0.2s ease, opacity 0.15s ease;
 }
 
-.task-card:hover .task-actions {
+.task-card:hover .task-actions,
+.task-card:focus-within .task-actions {
+  max-height: 34px;
+  margin-top: 10px;
   opacity: 1;
+}
+
+/* No hover on touch screens - keep the row permanently open there rather
+   than making the buttons unreachable. */
+@media (hover: none) {
+  .task-actions {
+    max-height: 34px;
+    margin-top: 10px;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-actions {
+    transition: none;
+  }
 }
 
 .task-action-btn {
