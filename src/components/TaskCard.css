@@ -244,7 +244,8 @@
 
 /* Collapsed to zero height at rest so the card wraps its content; hovering
    (or tabbing into) the card expands the row and nudges the cards below.
-   focus-within keeps the buttons reachable by keyboard. */
+   :focus-visible rather than :focus-within, so keyboard focus expands it but
+   a mouse click on a chip doesn't pin it open after the cursor leaves. */
 .task-actions {
   display: flex;
   gap: 4px;
@@ -256,7 +257,7 @@
 }
 
 .task-card:hover .task-actions,
-.task-card:focus-within .task-actions {
+.task-card:has(:focus-visible) .task-actions {
   max-height: 34px;
   margin-top: 10px;
   opacity: 1;
