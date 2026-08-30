@@ -30,6 +30,7 @@ export function createTask({
   impact = LEVEL_DEFAULT,
   time = LEVEL_DEFAULT,
   isBug = false,
+  isFeature = false,
   attachments = [],
   status = STATUS_NONE,
 }) {
@@ -45,6 +46,7 @@ export function createTask({
     impact,
     time,
     isBug,
+    isFeature,
     attachments,
     status,
     archived: false,

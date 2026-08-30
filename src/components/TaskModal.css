@@ -283,6 +283,12 @@
   color: var(--text-secondary);
 }
 
+.form-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
 .form-checkbox {
   display: flex;
   align-items: center;

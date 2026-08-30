@@ -60,6 +60,7 @@ export default function TaskModal({
   const [impact, setImpact] = useState(task?.impact ?? LEVEL_DEFAULT);
   const [time, setTime] = useState(task?.time ?? LEVEL_DEFAULT);
   const [isBug, setIsBug] = useState(task?.isBug ?? false);
+  const [isFeature, setIsFeature] = useState(task?.isFeature ?? false);
   const [status, setStatus] = useState(task?.status ?? STATUS_NONE);
   const [attachments, setAttachments] = useState(task?.attachments ?? []);
   const [attachError, setAttachError] = useState('');
@@ -136,6 +137,7 @@ export default function TaskModal({
       impact: roundLevel(impact),
       time: roundLevel(time),
       isBug,
+      isFeature,
       attachments,
       status,
     });
@@ -233,14 +235,28 @@ export default function TaskModal({
             )}
           </div>
 
-          <label className="form-checkbox">
-            <input
-              type="checkbox"
-              checked={isBug}
-              onChange={(e) => setIsBug(e.target.checked)}
-            />
-            Bug
-          </label>
+          <div className="form-checkbox-row">
+            <label className="form-checkbox">
+              <input
+                type="checkbox"
+                checked={isBug}
+                onChange={(e) => setIsBug(e.target.checked)}
+              />
+              Bug
+            </label>
+
+            <label
+              className="form-checkbox"
+              title="A new feature idea, usually meaning research to do"
+            >
+              <input
+                type="checkbox"
+                checked={isFeature}
+                onChange={(e) => setIsFeature(e.target.checked)}
+              />
+              Feature
+            </label>
+          </div>
 
           <div className="form-row">
             <div className="form-group">

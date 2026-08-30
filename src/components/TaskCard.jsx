@@ -60,6 +60,24 @@ function ClipIcon() {
   );
 }
 
+function BulbIcon() {
+  return (
+    <svg
+      className="bulb-icon"
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M8 1.8a4.4 4.4 0 0 0-2.6 7.95c.55.42.9 1 .95 1.65h3.3c.05-.65.4-1.23.95-1.65A4.4 4.4 0 0 0 8 1.8z" />
+      <path d="M6.6 13.6h2.8" />
+    </svg>
+  );
+}
+
 function GaugeIcon() {
   return (
     <svg
@@ -250,6 +268,12 @@ export default function TaskCard({
           <span className="task-bug" title="Bug">
             <BugIcon />
             Bug
+          </span>
+        )}
+        {task.isFeature && (
+          <span className="task-feature" title="Feature idea">
+            <BulbIcon />
+            Feature
           </span>
         )}
         {task.assignee !== 'Unassigned' && (

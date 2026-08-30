@@ -29,6 +29,8 @@
   --danger-bg: rgba(239, 68, 68, 0.12);
   --warning: #fbbf24;
   --warning-bg: rgba(251, 191, 36, 0.14);
+  --info: #38bdf8;
+  --info-bg: rgba(56, 189, 248, 0.14);
   --shadow: rgba(0, 0, 0, 0.4);
   --drag-over-bg: rgba(59, 130, 246, 0.06);
 }
@@ -55,6 +57,8 @@
   --danger-bg: rgba(239, 68, 68, 0.08);
   --warning: #b45309;
   --warning-bg: rgba(245, 158, 11, 0.16);
+  --info: #0369a1;
+  --info-bg: rgba(56, 189, 248, 0.16);
   --shadow: rgba(0, 0, 0, 0.08);
   --drag-over-bg: rgba(59, 130, 246, 0.04);
 }
