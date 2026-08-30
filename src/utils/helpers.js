@@ -40,6 +40,7 @@ export function createTask({
     assignee,
     columnId,
     createdAt: new Date().toISOString(),
+    movedAt: new Date().toISOString(),
     dueDate,
     impact,
     time,
@@ -100,6 +101,7 @@ export const BOARD_COLORS = [
    Add an entry here and sortTasks below to expose a new column sort option. */
 export const SORT_OPTIONS = [
   { value: 'manual', label: 'Manual' },
+  { value: 'status', label: 'Status' },
   { value: 'priority', label: 'Priority' },
   { value: 'impact', label: 'Impact' },
   { value: 'dueDate', label: 'Due date' },
@@ -162,6 +164,21 @@ export function sortTasks(tasks, sortBy) {
         if (!b.dueDate) return -1;
         return a.dueDate.localeCompare(b.dueDate);
       });
+
+    // Active, then paused, then no status. Within a rank, whichever task
+    // arrived in the column first comes first; movedAt is stamped on every
+    // transfer, with createdAt covering tasks from before it existed.
+    case 'status': {
+      const rank = (t) => {
+        if (t?.status === STATUS_ACTIVE) return 0;
+        if (t?.status === STATUS_PAUSED) return 1;
+        return 2;
+      };
+      const arrived = (t) => t?.movedAt || t?.createdAt || '';
+      return sorted.sort(
+        (a, b) => rank(a) - rank(b) || arrived(a).localeCompare(arrived(b))
+      );
+    }
 
     // Highest first for both.
     case 'priority':

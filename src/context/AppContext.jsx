@@ -244,6 +244,9 @@ function reducer(state, action) {
                 ? {
                     ...t,
                     columnId: targetColumnId,
+                    ...(t.columnId !== targetColumnId
+                      ? { movedAt: new Date().toISOString() }
+                      : {}),
                     ...(done ? { status: STATUS_NONE } : {}),
                   }
                 : t
@@ -273,6 +276,9 @@ function reducer(state, action) {
           const moved = {
             ...moving,
             columnId: targetColumnId,
+            ...(moving.columnId !== targetColumnId
+              ? { movedAt: new Date().toISOString() }
+              : {}),
             ...(done ? { status: STATUS_NONE } : {}),
           };
           const at = beforeTaskId
