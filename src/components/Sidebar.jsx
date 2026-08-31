@@ -17,6 +17,12 @@ const SYNC_LABELS = {
   },
 };
 
+// Two levels are enough for now. The group machinery (data, reducers, rows,
+// popovers) all stays - flip this to true to bring the middle level back.
+// While hidden, boards that already sit in a group are shown flattened into
+// their project so nothing disappears.
+const SHOW_GROUPS = false;
+
 export default function Sidebar() {
   const { state, dispatch, syncStatus } = useApp();
   const [collapsed, setCollapsed] = useState(false);
@@ -401,12 +407,14 @@ export default function Sidebar() {
           <div className="sidebar-section">
             <div className="sidebar-section-content">
                 {state.projects.map((project) => {
-                  const directBoards = state.boards.filter(
-                    (b) => b.projectId === project.id && !b.groupId
+                  const directBoards = state.boards.filter((b) =>
+                    SHOW_GROUPS
+                      ? b.projectId === project.id && !b.groupId
+                      : b.projectId === project.id
                   );
-                  const projectGroups = state.groups.filter(
-                    (g) => g.projectId === project.id
-                  );
+                  const projectGroups = SHOW_GROUPS
+                    ? state.groups.filter((g) => g.projectId === project.id)
+                    : [];
 
                   const isCollapsed = collapsedProjects.has(project.id);
                   const isEditingProject = editingProjectId === project.id;
@@ -550,26 +558,28 @@ export default function Sidebar() {
                           );
                         })}
 
-                        <div className="project-actions">
-                          {isCreating({
-                            kind: 'group',
-                            projectId: project.id,
-                          }) ? (
-                            renderNameForm('Group name...')
-                          ) : (
-                            <button
-                              className="btn-create-inline"
-                              onClick={() =>
-                                openForm({
-                                  kind: 'group',
-                                  projectId: project.id,
-                                })
-                              }
-                            >
-                              + Create group
-                            </button>
-                          )}
-                        </div>
+                        {SHOW_GROUPS && (
+                          <div className="project-actions">
+                            {isCreating({
+                              kind: 'group',
+                              projectId: project.id,
+                            }) ? (
+                              renderNameForm('Group name...')
+                            ) : (
+                              <button
+                                className="btn-create-inline"
+                                onClick={() =>
+                                  openForm({
+                                    kind: 'group',
+                                    projectId: project.id,
+                                  })
+                                }
+                              >
+                                + Create group
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                       )}
                     </div>
