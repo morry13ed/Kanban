@@ -218,11 +218,28 @@
   margin-top: 4px;
 }
 
+.group-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 0;
+}
+
 .board-group-label {
-  padding: 2px 4px 2px;
+  flex: 1;
+  min-width: 0;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.board-group-label:hover {
+  color: var(--text-primary);
 }
 
 .project-actions {

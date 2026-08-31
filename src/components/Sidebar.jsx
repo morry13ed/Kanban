@@ -31,6 +31,7 @@ export default function Sidebar() {
   const [newBoardCollaborators, setNewBoardCollaborators] = useState([]);
 
   const [collapsedProjects, setCollapsedProjects] = useState(() => new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState(() => new Set());
   const [editingProjectId, setEditingProjectId] = useState(null);
   const [editingProjectName, setEditingProjectName] = useState('');
   const popoverRef = useRef(null);
@@ -132,14 +133,16 @@ export default function Sidebar() {
     setEditingBoardCollaborators([]);
   };
 
-  const toggleProject = (projectId) => {
-    setCollapsedProjects((current) => {
+  const toggleIn = (setter) => (id) => {
+    setter((current) => {
       const next = new Set(current);
-      if (next.has(projectId)) next.delete(projectId);
-      else next.add(projectId);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
+  const toggleProject = toggleIn(setCollapsedProjects);
+  const toggleGroup = toggleIn(setCollapsedGroups);
 
   const saveProjectName = (project) => {
     const name = editingProjectName.trim();
@@ -151,7 +154,7 @@ export default function Sidebar() {
 
   // The project-level board form floats as a popover off the + button, so a
   // click anywhere else should dismiss it.
-  const popoverOpen = creating?.kind === 'board' && creating.groupId === null;
+  const popoverOpen = creating?.kind === 'board';
   useEffect(() => {
     if (!popoverOpen) return;
     const onPointerDown = (e) => {
@@ -262,17 +265,6 @@ export default function Sidebar() {
       </div>
     </div>
   );
-
-  const renderCreateBoard = (projectId, groupId) => {
-    const spec = { kind: 'board', projectId, groupId };
-    return isCreating(spec) ? (
-      renderBoardForm()
-    ) : (
-      <button className="btn-create-inline" onClick={() => openForm(spec)}>
-        + Create board
-      </button>
-    );
-  };
 
   const renderBoardRow = (board) => {
     const isActive = state.activeBoardId === board.id;
@@ -499,19 +491,64 @@ export default function Sidebar() {
                           </ul>
                         )}
 
-                        {projectGroups.map((group) => (
-                          <div key={group.id} className="group-section">
-                            <div className="board-group-label">
-                              {group.name}
+                        {projectGroups.map((group) => {
+                          const groupCollapsed = collapsedGroups.has(group.id);
+                          const groupBoardSpec = {
+                            kind: 'board',
+                            projectId: project.id,
+                            groupId: group.id,
+                          };
+
+                          return (
+                            <div key={group.id} className="group-section">
+                              <div className="group-row">
+                                <button
+                                  type="button"
+                                  className="project-toggle"
+                                  onClick={() => toggleGroup(group.id)}
+                                  title={groupCollapsed ? 'Expand' : 'Collapse'}
+                                >
+                                  {groupCollapsed ? '▸' : '▾'}
+                                </button>
+                                <span
+                                  className="board-group-label"
+                                  onClick={() => toggleGroup(group.id)}
+                                >
+                                  {group.name}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="project-action-btn"
+                                  title="Add board"
+                                  onClick={() =>
+                                    isCreating(groupBoardSpec)
+                                      ? closeForm()
+                                      : openForm(groupBoardSpec)
+                                  }
+                                >
+                                  +
+                                </button>
+
+                                {isCreating(groupBoardSpec) && (
+                                  <div
+                                    className="board-form-popover"
+                                    ref={popoverRef}
+                                  >
+                                    {renderBoardForm()}
+                                  </div>
+                                )}
+                              </div>
+
+                              {!groupCollapsed && (
+                                <ul className="board-list">
+                                  {state.boards
+                                    .filter((b) => b.groupId === group.id)
+                                    .map(renderBoardRow)}
+                                </ul>
+                              )}
                             </div>
-                            <ul className="board-list">
-                              {state.boards
-                                .filter((b) => b.groupId === group.id)
-                                .map(renderBoardRow)}
-                            </ul>
-                            {renderCreateBoard(project.id, group.id)}
-                          </div>
-                        ))}
+                          );
+                        })}
 
                         <div className="project-actions">
                           {isCreating({
