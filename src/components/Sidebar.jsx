@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { exportState, importState } from '../utils/storage';
 import { BOARD_COLORS, countOpenTasks } from '../utils/helpers';
@@ -29,6 +29,11 @@ export default function Sidebar() {
   const [newName, setNewName] = useState('');
   const [newBoardColor, setNewBoardColor] = useState(BOARD_COLORS[0]);
   const [newBoardCollaborators, setNewBoardCollaborators] = useState([]);
+
+  const [collapsedProjects, setCollapsedProjects] = useState(() => new Set());
+  const [editingProjectId, setEditingProjectId] = useState(null);
+  const [editingProjectName, setEditingProjectName] = useState('');
+  const popoverRef = useRef(null);
 
   const [editingBoardId, setEditingBoardId] = useState(null);
   const [editingBoardName, setEditingBoardName] = useState('');
@@ -126,6 +131,37 @@ export default function Sidebar() {
     setEditingBoardId(null);
     setEditingBoardCollaborators([]);
   };
+
+  const toggleProject = (projectId) => {
+    setCollapsedProjects((current) => {
+      const next = new Set(current);
+      if (next.has(projectId)) next.delete(projectId);
+      else next.add(projectId);
+      return next;
+    });
+  };
+
+  const saveProjectName = (project) => {
+    const name = editingProjectName.trim();
+    if (name && name !== project.name) {
+      dispatch({ type: 'UPDATE_PROJECT', payload: { id: project.id, name } });
+    }
+    setEditingProjectId(null);
+  };
+
+  // The project-level board form floats as a popover off the + button, so a
+  // click anywhere else should dismiss it.
+  const popoverOpen = creating?.kind === 'board' && creating.groupId === null;
+  useEffect(() => {
+    if (!popoverOpen) return;
+    const onPointerDown = (e) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
+        closeForm();
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [popoverOpen]);
 
   const isCreating = (spec) =>
     creating &&
@@ -380,10 +416,82 @@ export default function Sidebar() {
                     (g) => g.projectId === project.id
                   );
 
+                  const isCollapsed = collapsedProjects.has(project.id);
+                  const isEditingProject = editingProjectId === project.id;
+                  const boardSpec = {
+                    kind: 'board',
+                    projectId: project.id,
+                    groupId: null,
+                  };
+
                   return (
                     <div key={project.id} className="project-section">
-                      <div className="project-label">{project.name}</div>
+                      <div className="project-row">
+                        <button
+                          type="button"
+                          className="project-toggle"
+                          onClick={() => toggleProject(project.id)}
+                          title={isCollapsed ? 'Expand' : 'Collapse'}
+                        >
+                          {isCollapsed ? '▸' : '▾'}
+                        </button>
 
+                        {isEditingProject ? (
+                          <input
+                            type="text"
+                            value={editingProjectName}
+                            onChange={(e) =>
+                              setEditingProjectName(e.target.value)
+                            }
+                            onBlur={() => saveProjectName(project)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveProjectName(project);
+                              if (e.key === 'Escape') setEditingProjectId(null);
+                            }}
+                            autoFocus
+                            className="project-name-input"
+                          />
+                        ) : (
+                          <span
+                            className="project-label"
+                            onClick={() => toggleProject(project.id)}
+                          >
+                            {project.name}
+                          </span>
+                        )}
+
+                        <button
+                          type="button"
+                          className="project-action-btn project-edit-btn"
+                          title="Rename project"
+                          onClick={() => {
+                            setEditingProjectId(project.id);
+                            setEditingProjectName(project.name);
+                          }}
+                        >
+                          ✎
+                        </button>
+                        <button
+                          type="button"
+                          className="project-action-btn"
+                          title="Add board"
+                          onClick={() =>
+                            isCreating(boardSpec)
+                              ? closeForm()
+                              : openForm(boardSpec)
+                          }
+                        >
+                          +
+                        </button>
+
+                        {isCreating(boardSpec) && (
+                          <div className="board-form-popover" ref={popoverRef}>
+                            {renderBoardForm()}
+                          </div>
+                        )}
+                      </div>
+
+                      {!isCollapsed && (
                       <div className="project-body">
                         {directBoards.length > 0 && (
                           <ul className="board-list">
@@ -406,7 +514,6 @@ export default function Sidebar() {
                         ))}
 
                         <div className="project-actions">
-                          {renderCreateBoard(project.id, null)}
                           {isCreating({
                             kind: 'group',
                             projectId: project.id,
@@ -427,6 +534,7 @@ export default function Sidebar() {
                           )}
                         </div>
                       </div>
+                      )}
                     </div>
                   );
                 })}

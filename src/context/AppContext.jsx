@@ -65,6 +65,16 @@ function reducer(state, action) {
         projects: [...state.projects, { id: generateId(), name }],
       };
     }
+    case 'UPDATE_PROJECT': {
+      const name = action.payload.name.trim();
+      if (!name) return state;
+      return {
+        ...state,
+        projects: state.projects.map((pr) =>
+          pr.id === action.payload.id ? { ...pr, name } : pr
+        ),
+      };
+    }
     case 'ADD_GROUP': {
       const { projectId } = action.payload;
       const name = action.payload.name.trim();

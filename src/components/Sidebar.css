@@ -102,11 +102,107 @@
   margin-top: 14px;
 }
 
+.project-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 0 4px;
+}
+
+.project-toggle {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.project-toggle:hover {
+  background: var(--hover);
+  color: var(--text-primary);
+}
+
 .project-label {
-  padding: 2px 4px 4px;
+  flex: 1;
+  min-width: 0;
   font-size: 13px;
   font-weight: 700;
   color: var(--text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-name-input {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 6px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  outline: none;
+}
+
+.project-action-btn {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.project-action-btn:hover {
+  background: var(--hover);
+  color: var(--text-primary);
+}
+
+.project-edit-btn {
+  opacity: 0;
+}
+
+.project-row:hover .project-edit-btn,
+.project-row:focus-within .project-edit-btn {
+  opacity: 1;
+}
+
+/* The + button's board form, anchored under the row's right edge. */
+.board-form-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  z-index: 30;
+}
+
+.board-form-popover .new-board-form {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 8px 24px var(--shadow);
 }
 
 /* One shared indent: groups and boards inside a project, boards inside a
