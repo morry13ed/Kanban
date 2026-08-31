@@ -220,3 +220,42 @@ export function countOpenTasks(board) {
     (t) => !t.archived && (doneColumnId === null || t.columnId !== doneColumnId)
   ).length;
 }
+
+// Upgrades pre-project state to the three-level shape: projects at the top,
+// groups inside a project, boards inside a group or directly in a project.
+// Old slash-prefixed headings ("Flash/ Design") become a project named
+// "Flash"; boards without a prefix collect in a "General" project; group
+// names stored by the old Create Group button become empty projects. Board
+// names are left untouched. Already-migrated state passes through.
+export function normalizeState(saved) {
+  if (!saved) return null;
+  if (Array.isArray(saved.projects)) {
+    return { ...saved, groups: saved.groups || [] };
+  }
+
+  const projects = [];
+  const byKey = new Map();
+  const ensureProject = (name) => {
+    const key = name.toLowerCase();
+    let project = byKey.get(key);
+    if (!project) {
+      project = { id: generateId(), name };
+      byKey.set(key, project);
+      projects.push(project);
+    }
+    return project;
+  };
+
+  const boards = (saved.boards || []).map((board) => {
+    const slash = board.name.indexOf('/');
+    const prefix = slash > 0 ? board.name.slice(0, slash).trim() : '';
+    const project = ensureProject(prefix || 'General');
+    return { ...board, projectId: project.id, groupId: null };
+  });
+
+  for (const name of saved.groups || []) {
+    if (typeof name === 'string') ensureProject(name);
+  }
+
+  return { ...saved, projects, groups: [], boards };
+}

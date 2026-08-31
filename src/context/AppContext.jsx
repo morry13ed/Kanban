@@ -21,6 +21,7 @@ import {
   DEFAULT_COLUMN_TYPE,
   STATUS_NONE,
   isSuccessColumn,
+  normalizeState,
 } from '../utils/helpers';
 
 const AppContext = createContext();
@@ -34,8 +35,9 @@ const REMOTE_SAVE_DELAY = 800;
 const SYNC_OFF = 'off';
 
 const defaultState = {
-  boards: [],
+  projects: [],
   groups: [],
+  boards: [],
   activeBoardId: null,
   theme: 'dark',
   filter: 'All',
@@ -51,33 +53,45 @@ function reducer(state, action) {
     case 'SET_FILTER':
       return { ...state, filter: action.payload };
 
-    // ── Groups ──
-    // A group is just a name; boards join it by carrying "Name/" as a prefix.
-    // Storing the name lets an empty group show its heading before any board
-    // moves in.
-    case 'ADD_GROUP': {
-      const name = action.payload.replace(/\/+$/, '').trim();
+    // ── Projects & groups ──
+    case 'ADD_PROJECT': {
+      const name = action.payload.trim();
       if (!name) return state;
-      const key = name.toLowerCase();
-      const groups = state.groups || [];
-      // Already a heading, whether stored or derived from a board's prefix.
-      const derived = state.boards.some((b) => {
-        const slash = b.name.indexOf('/');
-        return slash > 0 && b.name.slice(0, slash).trim().toLowerCase() === key;
-      });
-      if (derived || groups.some((g) => g.toLowerCase() === key)) {
+      if (state.projects.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
         return state;
       }
-      return { ...state, groups: [...groups, name] };
+      return {
+        ...state,
+        projects: [...state.projects, { id: generateId(), name }],
+      };
+    }
+    case 'ADD_GROUP': {
+      const { projectId } = action.payload;
+      const name = action.payload.name.trim();
+      if (!name) return state;
+      const duplicate = state.groups.some(
+        (g) =>
+          g.projectId === projectId &&
+          g.name.toLowerCase() === name.toLowerCase()
+      );
+      if (duplicate) return state;
+      return {
+        ...state,
+        groups: [...state.groups, { id: generateId(), name, projectId }],
+      };
     }
 
     // ── Boards ──
     case 'ADD_BOARD': {
-      const board = createBoard(
-        action.payload.name,
-        action.payload.color,
-        action.payload.members
-      );
+      const board = {
+        ...createBoard(
+          action.payload.name,
+          action.payload.color,
+          action.payload.members
+        ),
+        projectId: action.payload.projectId,
+        groupId: action.payload.groupId ?? null,
+      };
       return {
         ...state,
         boards: [...state.boards, board],
@@ -336,14 +350,13 @@ function reducer(state, action) {
     // per-device, and the board you're currently looking at is kept selected
     // as long as it still exists in the incoming data.
     case 'IMPORT_STATE': {
-      const incoming = action.payload;
+      const incoming = normalizeState(action.payload);
       const boards = incoming.boards || [];
       const activeStillExists = boards.some((b) => b.id === state.activeBoardId);
 
       return {
         ...incoming,
         boards,
-        groups: incoming.groups || [],
         activeBoardId: activeStillExists
           ? state.activeBoardId
           : incoming.activeBoardId ?? boards[0]?.id ?? null,
@@ -359,7 +372,7 @@ function reducer(state, action) {
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, defaultState, (initial) => {
-    const saved = loadState();
+    const saved = normalizeState(loadState());
     return saved ? { ...initial, ...saved } : initial;
   });
 

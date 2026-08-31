@@ -44,8 +44,9 @@ export async function loadRemoteState() {
 // per-device UI preferences and stay in localStorage.
 function toSharedState(state) {
   return {
-    boards: state.boards,
+    projects: state.projects || [],
     groups: state.groups || [],
+    boards: state.boards,
     activeBoardId: state.activeBoardId,
   };
 }

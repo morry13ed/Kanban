@@ -9,7 +9,7 @@ const SYNC_LABELS = {
     text: 'This browser only',
     hint: 'Cloud sync is not configured, so boards are saved in this browser alone.',
   },
-  saving: { text: 'Saving\u2026', hint: 'Saving your boards to the cloud.' },
+  saving: { text: 'Saving…', hint: 'Saving your boards to the cloud.' },
   synced: { text: 'Synced', hint: 'Your boards are saved to the cloud.' },
   error: {
     text: 'Not synced',
@@ -17,101 +17,70 @@ const SYNC_LABELS = {
   },
 };
 
-// "Flash/ Design" files under a "Flash" heading; a name without a slash (or
-// with nothing before it) stays ungrouped. Grouping is derived from the name
-// alone, so renaming is all it takes to move a project.
-function groupBoards(boards, storedGroups = []) {
-  const sections = [];
-  const byKey = new Map();
-
-  // Stored groups come first so an empty one still shows its heading, and so
-  // creation order wins over which board happens to be listed first.
-  for (const name of storedGroups) {
-    const key = name.toLowerCase();
-    if (!byKey.has(key)) {
-      const section = { key, label: name, boards: [] };
-      byKey.set(key, section);
-      sections.push(section);
-    }
-  }
-
-  for (const board of boards) {
-    const slash = board.name.indexOf('/');
-    const prefix = slash > 0 ? board.name.slice(0, slash).trim() : '';
-    const key = prefix ? prefix.toLowerCase() : null;
-
-    let section = key === null ? null : byKey.get(key);
-    if (key !== null && !section) {
-      section = { key, label: prefix, boards: [] };
-      byKey.set(key, section);
-      sections.push(section);
-    }
-    if (section) {
-      section.boards.push(board);
-    } else {
-      // Ungrouped items live in one anonymous section at the top.
-      let loose = sections[0]?.key === null ? sections[0] : null;
-      if (!loose) {
-        loose = { key: null, label: null, boards: [] };
-        sections.unshift(loose);
-      }
-      loose.boards.push(board);
-    }
-  }
-
-  return sections;
-}
-
 export default function Sidebar() {
   const { state, dispatch, syncStatus } = useApp();
   const [collapsed, setCollapsed] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(true);
-  const [showNewBoard, setShowNewBoard] = useState(false);
-  const [showNewGroup, setShowNewGroup] = useState(false);
-  const [newGroupName, setNewGroupName] = useState('');
-  const [newBoardName, setNewBoardName] = useState('');
+
+  // What is being created right now, and where:
+  //   { kind: 'project' }
+  //   { kind: 'group', projectId }
+  //   { kind: 'board', projectId, groupId }   (groupId null = directly in project)
+  const [creating, setCreating] = useState(null);
+  const [newName, setNewName] = useState('');
   const [newBoardColor, setNewBoardColor] = useState(BOARD_COLORS[0]);
   const [newBoardCollaborators, setNewBoardCollaborators] = useState([]);
+
   const [editingBoardId, setEditingBoardId] = useState(null);
   const [editingBoardName, setEditingBoardName] = useState('');
   const [editingBoardColor, setEditingBoardColor] = useState(BOARD_COLORS[0]);
   const [editingBoardCollaborators, setEditingBoardCollaborators] = useState([]);
   const fileInputRef = useRef(null);
 
-  const handleCreateGroup = () => {
-    const name = newGroupName.trim();
-    if (!name) return;
-    dispatch({ type: 'ADD_GROUP', payload: name });
-    setNewGroupName('');
-    setShowNewGroup(false);
-  };
-
-  const handleCreateBoard = () => {
-    const name = newBoardName.trim();
-    if (!name) return;
-    const members = newBoardCollaborators
-      .map(({ name, email }) => ({
-        name: name.trim(),
-        email: email.trim(),
-      }))
-      .filter((c) => c.name);
-
-    dispatch({
-      type: 'ADD_BOARD',
-      payload: { name, color: newBoardColor, members },
-    });
-    setNewBoardName('');
+  const openForm = (spec) => {
+    setCreating(spec);
+    setNewName('');
     setNewBoardColor(BOARD_COLORS[0]);
     setNewBoardCollaborators([]);
-    setShowNewBoard(false);
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') handleCreateBoard();
-    if (e.key === 'Escape') {
-      setShowNewBoard(false);
-      setNewBoardCollaborators([]);
+  const closeForm = () => {
+    setCreating(null);
+    setNewBoardCollaborators([]);
+  };
+
+  const handleCreate = () => {
+    const name = newName.trim();
+    if (!name || !creating) return;
+
+    if (creating.kind === 'project') {
+      dispatch({ type: 'ADD_PROJECT', payload: name });
+    } else if (creating.kind === 'group') {
+      dispatch({
+        type: 'ADD_GROUP',
+        payload: { projectId: creating.projectId, name },
+      });
+    } else {
+      const members = newBoardCollaborators
+        .map(({ name: n, email }) => ({ name: n.trim(), email: email.trim() }))
+        .filter((c) => c.name);
+      dispatch({
+        type: 'ADD_BOARD',
+        payload: {
+          name,
+          color: newBoardColor,
+          members,
+          projectId: creating.projectId,
+          groupId: creating.groupId,
+        },
+      });
     }
+    closeForm();
+  };
+
+  const handleFormKeyDown = (e) => {
+    if (e.key === 'Enter') handleCreate();
+    if (e.key === 'Escape') closeForm();
   };
 
   const handleExport = () => {
@@ -146,24 +115,245 @@ export default function Sidebar() {
     if (!editingBoardId) return;
     const name = editingBoardName.trim() || board.name;
     const members = editingBoardCollaborators
-      .map(({ name, email }) => ({
-        name: name.trim(),
-        email: email.trim(),
-      }))
+      .map(({ name: n, email }) => ({ name: n.trim(), email: email.trim() }))
       .filter((c) => c.name);
     dispatch({
       type: 'UPDATE_BOARD',
       payload: {
         id: board.id,
-        updates: {
-          name,
-          color: editingBoardColor,
-          members,
-        },
+        updates: { name, color: editingBoardColor, members },
       },
     });
     setEditingBoardId(null);
     setEditingBoardCollaborators([]);
+  };
+
+  const isCreating = (spec) =>
+    creating &&
+    creating.kind === spec.kind &&
+    (creating.projectId ?? null) === (spec.projectId ?? null) &&
+    (creating.groupId ?? null) === (spec.groupId ?? null);
+
+  const renderNameForm = (placeholder) => (
+    <div className="new-board-form">
+      <input
+        type="text"
+        placeholder={placeholder}
+        value={newName}
+        onChange={(e) => setNewName(e.target.value)}
+        onKeyDown={handleFormKeyDown}
+        autoFocus
+        className="new-board-input"
+      />
+      <div className="new-board-actions">
+        <button className="btn btn-sm btn-primary" onClick={handleCreate}>
+          Create
+        </button>
+        <button className="btn btn-sm btn-ghost" onClick={closeForm}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderBoardForm = () => (
+    <div className="new-board-form">
+      <input
+        type="text"
+        placeholder="Board name..."
+        value={newName}
+        onChange={(e) => setNewName(e.target.value)}
+        onKeyDown={handleFormKeyDown}
+        autoFocus
+        className="new-board-input"
+      />
+      <div className="collaborators-section">
+        {newBoardCollaborators.map((collab, idx) => (
+          <div key={idx} className="collaborator-row">
+            <input
+              type="text"
+              placeholder="Name"
+              value={collab.name}
+              onChange={(e) => {
+                const next = [...newBoardCollaborators];
+                next[idx] = { ...next[idx], name: e.target.value };
+                setNewBoardCollaborators(next);
+              }}
+              className="new-board-input"
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              value={collab.email}
+              onChange={(e) => {
+                const next = [...newBoardCollaborators];
+                next[idx] = { ...next[idx], email: e.target.value };
+                setNewBoardCollaborators(next);
+              }}
+              className="new-board-input"
+            />
+          </div>
+        ))}
+        <button
+          type="button"
+          className="btn-link"
+          onClick={() =>
+            setNewBoardCollaborators([
+              ...newBoardCollaborators,
+              { name: '', email: '' },
+            ])
+          }
+        >
+          Add collaborator
+        </button>
+      </div>
+      <div className="color-picker">
+        {BOARD_COLORS.map((c) => (
+          <button
+            key={c}
+            className={`color-dot ${newBoardColor === c ? 'selected' : ''}`}
+            style={{ backgroundColor: c }}
+            onClick={() => setNewBoardColor(c)}
+          />
+        ))}
+      </div>
+      <div className="new-board-actions">
+        <button className="btn btn-sm btn-primary" onClick={handleCreate}>
+          Create
+        </button>
+        <button className="btn btn-sm btn-ghost" onClick={closeForm}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderCreateBoard = (projectId, groupId) => {
+    const spec = { kind: 'board', projectId, groupId };
+    return isCreating(spec) ? (
+      renderBoardForm()
+    ) : (
+      <button className="btn-create-inline" onClick={() => openForm(spec)}>
+        + Create board
+      </button>
+    );
+  };
+
+  const renderBoardRow = (board) => {
+    const isActive = state.activeBoardId === board.id;
+    const isEditing = editingBoardId === board.id;
+    const openCount = countOpenTasks(board);
+
+    return (
+      <li
+        key={board.id}
+        className={`board-item ${isActive ? 'active' : ''} ${
+          isEditing ? 'editing' : ''
+        }`}
+        onClick={() =>
+          dispatch({ type: 'SET_ACTIVE_BOARD', payload: board.id })
+        }
+      >
+        <span className="board-dot" style={{ backgroundColor: board.color }} />
+        {isEditing ? (
+          <div className="board-edit-content">
+            <input
+              type="text"
+              value={editingBoardName}
+              onChange={(e) => setEditingBoardName(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              className="board-name-input"
+            />
+            <div
+              className="collaborators-section"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {editingBoardCollaborators.map((collab, idx) => (
+                <div key={idx} className="collaborator-row">
+                  <input
+                    type="text"
+                    placeholder="Name"
+                    value={collab.name}
+                    onChange={(e) => {
+                      const next = [...editingBoardCollaborators];
+                      next[idx] = { ...next[idx], name: e.target.value };
+                      setEditingBoardCollaborators(next);
+                    }}
+                    className="new-board-input"
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={collab.email}
+                    onChange={(e) => {
+                      const next = [...editingBoardCollaborators];
+                      next[idx] = { ...next[idx], email: e.target.value };
+                      setEditingBoardCollaborators(next);
+                    }}
+                    className="new-board-input"
+                  />
+                </div>
+              ))}
+              <button
+                type="button"
+                className="btn-link"
+                onClick={() =>
+                  setEditingBoardCollaborators([
+                    ...editingBoardCollaborators,
+                    { name: '', email: '' },
+                  ])
+                }
+              >
+                Add collaborator
+              </button>
+            </div>
+            <div
+              className="board-color-picker"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {BOARD_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={`board-color-dot ${
+                    editingBoardColor === c ? 'selected' : ''
+                  }`}
+                  style={{ backgroundColor: c }}
+                  onClick={() => setEditingBoardColor(c)}
+                />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            <span className="board-name">{board.name}</span>
+            {openCount > 0 && (
+              <span
+                className="board-count"
+                title={`${openCount} open ${openCount === 1 ? 'task' : 'tasks'}`}
+              >
+                {openCount}
+              </span>
+            )}
+          </>
+        )}
+        <button
+          type="button"
+          className="board-edit-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isEditing) {
+              saveEditingBoard(board);
+            } else {
+              startEditingBoard(board);
+            }
+          }}
+          title={isEditing ? 'Save changes' : 'Edit board'}
+        >
+          {isEditing ? '✓' : '✎'}
+        </button>
+      </li>
+    );
   };
 
   return (
@@ -192,265 +382,75 @@ export default function Sidebar() {
 
             {projectsOpen && (
               <div className="sidebar-section-content">
-                {groupBoards(state.boards, state.groups).map((section) => (
-                  <div key={section.key ?? 'ungrouped'} className="board-group">
-                    {section.label !== null && (
-                      <div className="board-group-label">{section.label}</div>
-                    )}
-                    <ul className="board-list">
-                      {section.boards.map((board) => {
-                    const isActive = state.activeBoardId === board.id;
-                    const isEditing = editingBoardId === board.id;
-                    const openCount = countOpenTasks(board);
+                {state.projects.map((project) => {
+                  const directBoards = state.boards.filter(
+                    (b) => b.projectId === project.id && !b.groupId
+                  );
+                  const projectGroups = state.groups.filter(
+                    (g) => g.projectId === project.id
+                  );
 
-                    return (
-                      <li
-                        key={board.id}
-                        className={`board-item ${isActive ? 'active' : ''} ${
-                          isEditing ? 'editing' : ''
-                        }`}
-                        onClick={() =>
-                          dispatch({
-                            type: 'SET_ACTIVE_BOARD',
-                            payload: board.id,
-                          })
-                        }
-                      >
-                        <span
-                          className="board-dot"
-                          style={{ backgroundColor: board.color }}
-                        />
-                        {isEditing ? (
-                          <div className="board-edit-content">
-                            <input
-                              type="text"
-                              value={editingBoardName}
-                              onChange={(e) => setEditingBoardName(e.target.value)}
-                              onClick={(e) => e.stopPropagation()}
-                              className="board-name-input"
-                            />
-                            <div
-                              className="collaborators-section"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {editingBoardCollaborators.map((collab, idx) => (
-                                <div key={idx} className="collaborator-row">
-                                  <input
-                                    type="text"
-                                    placeholder="Name"
-                                    value={collab.name}
-                                    onChange={(e) => {
-                                      const next = [...editingBoardCollaborators];
-                                      next[idx] = {
-                                        ...next[idx],
-                                        name: e.target.value,
-                                      };
-                                      setEditingBoardCollaborators(next);
-                                    }}
-                                    className="new-board-input"
-                                  />
-                                  <input
-                                    type="email"
-                                    placeholder="Email"
-                                    value={collab.email}
-                                    onChange={(e) => {
-                                      const next = [...editingBoardCollaborators];
-                                      next[idx] = {
-                                        ...next[idx],
-                                        email: e.target.value,
-                                      };
-                                      setEditingBoardCollaborators(next);
-                                    }}
-                                    className="new-board-input"
-                                  />
-                                </div>
-                              ))}
-                              <button
-                                type="button"
-                                className="btn-link"
-                                onClick={() =>
-                                  setEditingBoardCollaborators([
-                                    ...editingBoardCollaborators,
-                                    { name: '', email: '' },
-                                  ])
-                                }
-                              >
-                                Add collaborator
-                              </button>
-                            </div>
-                            <div
-                              className="board-color-picker"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {BOARD_COLORS.map((c) => (
-                                <button
-                                  key={c}
-                                  type="button"
-                                  className={`board-color-dot ${
-                                    editingBoardColor === c ? 'selected' : ''
-                                  }`}
-                                  style={{ backgroundColor: c }}
-                                  onClick={() => setEditingBoardColor(c)}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <span className="board-name">{board.name}</span>
-                            {openCount > 0 && (
-                              <span
-                                className="board-count"
-                                title={`${openCount} open ${
-                                  openCount === 1 ? 'task' : 'tasks'
-                                }`}
-                              >
-                                {openCount}
-                              </span>
-                            )}
-                          </>
+                  return (
+                    <div key={project.id} className="project-section">
+                      <div className="project-label">{project.name}</div>
+
+                      <div className="project-body">
+                        {directBoards.length > 0 && (
+                          <ul className="board-list">
+                            {directBoards.map(renderBoardRow)}
+                          </ul>
                         )}
-                        <button
-                          type="button"
-                          className="board-edit-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (isEditing) {
-                              saveEditingBoard(board);
-                            } else {
-                              startEditingBoard(board);
-                            }
-                          }}
-                          title={isEditing ? 'Save changes' : 'Edit project'}
-                        >
-                          {isEditing ? '✓' : '✎'}
-                        </button>
-                      </li>
-                    );
-                      })}
-                    </ul>
-                  </div>
-                ))}
 
-                {showNewBoard ? (
-                  <div className="new-board-form">
-                    <input
-                      type="text"
-                      placeholder="Board name..."
-                      value={newBoardName}
-                      onChange={(e) => setNewBoardName(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      autoFocus
-                      className="new-board-input"
-                    />
-                    <div className="collaborators-section">
-                      {newBoardCollaborators.map((collab, idx) => (
-                        <div key={idx} className="collaborator-row">
-                          <input
-                            type="text"
-                            placeholder="Name"
-                            value={collab.name}
-                            onChange={(e) => {
-                              const next = [...newBoardCollaborators];
-                              next[idx] = { ...next[idx], name: e.target.value };
-                              setNewBoardCollaborators(next);
-                            }}
-                            className="new-board-input"
-                          />
-                          <input
-                            type="email"
-                            placeholder="Email"
-                            value={collab.email}
-                            onChange={(e) => {
-                              const next = [...newBoardCollaborators];
-                              next[idx] = { ...next[idx], email: e.target.value };
-                              setNewBoardCollaborators(next);
-                            }}
-                            className="new-board-input"
-                          />
+                        {projectGroups.map((group) => (
+                          <div key={group.id} className="group-section">
+                            <div className="board-group-label">
+                              {group.name}
+                            </div>
+                            <ul className="board-list">
+                              {state.boards
+                                .filter((b) => b.groupId === group.id)
+                                .map(renderBoardRow)}
+                            </ul>
+                            {renderCreateBoard(project.id, group.id)}
+                          </div>
+                        ))}
+
+                        <div className="project-actions">
+                          {renderCreateBoard(project.id, null)}
+                          {isCreating({
+                            kind: 'group',
+                            projectId: project.id,
+                          }) ? (
+                            renderNameForm('Group name...')
+                          ) : (
+                            <button
+                              className="btn-create-inline"
+                              onClick={() =>
+                                openForm({
+                                  kind: 'group',
+                                  projectId: project.id,
+                                })
+                              }
+                            >
+                              + Create group
+                            </button>
+                          )}
                         </div>
-                      ))}
-                      <button
-                        type="button"
-                        className="btn-link"
-                        onClick={() =>
-                          setNewBoardCollaborators([
-                            ...newBoardCollaborators,
-                            { name: '', email: '' },
-                          ])
-                        }
-                      >
-                        Add collaborator
-                      </button>
+                      </div>
                     </div>
-                    <div className="color-picker">
-                      {BOARD_COLORS.map((c) => (
-                        <button
-                          key={c}
-                          className={`color-dot ${
-                            newBoardColor === c ? 'selected' : ''
-                          }`}
-                          style={{ backgroundColor: c }}
-                          onClick={() => setNewBoardColor(c)}
-                        />
-                      ))}
-                    </div>
-                    <div className="new-board-actions">
-                      <button className="btn btn-sm btn-primary" onClick={handleCreateBoard}>
-                        Create
-                      </button>
-                      <button
-                        className="btn btn-sm btn-ghost"
-                        onClick={() => setShowNewBoard(false)}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
+                  );
+                })}
+
+                <div className="sidebar-separator" />
+
+                {isCreating({ kind: 'project' }) ? (
+                  renderNameForm('Project name...')
                 ) : (
                   <button
                     className="btn-create-project"
-                    onClick={() => setShowNewBoard(true)}
+                    onClick={() => openForm({ kind: 'project' })}
                   >
                     + Create Project
-                  </button>
-                )}
-
-                {showNewGroup ? (
-                  <div className="new-board-form">
-                    <input
-                      type="text"
-                      placeholder="Group name..."
-                      value={newGroupName}
-                      onChange={(e) => setNewGroupName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleCreateGroup();
-                        if (e.key === 'Escape') setShowNewGroup(false);
-                      }}
-                      autoFocus
-                      className="new-board-input"
-                    />
-                    <div className="new-board-actions">
-                      <button
-                        className="btn btn-sm btn-primary"
-                        onClick={handleCreateGroup}
-                      >
-                        Create
-                      </button>
-                      <button
-                        className="btn btn-sm btn-ghost"
-                        onClick={() => setShowNewGroup(false)}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    className="btn-create-project"
-                    onClick={() => setShowNewGroup(true)}
-                  >
-                    + Create Group
                   </button>
                 )}
               </div>

@@ -97,15 +97,69 @@
   padding: 0;
 }
 
-.board-group + .board-group {
-  margin-top: 10px;
+/* ── Project > group > board hierarchy ── */
+.project-section + .project-section {
+  margin-top: 14px;
 }
 
-.board-group-label {
+.project-label {
   padding: 2px 4px 4px;
   font-size: 13px;
   font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* One shared indent: groups and boards inside a project, boards inside a
+   group aligned with the group heading. */
+.project-body {
+  padding-left: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.group-section {
+  margin-top: 4px;
+}
+
+.board-group-label {
+  padding: 2px 4px 2px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--text-secondary);
+}
+
+.project-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.btn-create-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  width: 100%;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.btn-create-inline:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.sidebar-separator {
+  border-top: 1px solid var(--border);
+  margin: 12px 0;
 }
 
 .board-item {
