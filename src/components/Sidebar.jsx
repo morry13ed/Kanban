@@ -20,9 +20,20 @@ const SYNC_LABELS = {
 // "Flash/ Design" files under a "Flash" heading; a name without a slash (or
 // with nothing before it) stays ungrouped. Grouping is derived from the name
 // alone, so renaming is all it takes to move a project.
-function groupBoards(boards) {
+function groupBoards(boards, storedGroups = []) {
   const sections = [];
   const byKey = new Map();
+
+  // Stored groups come first so an empty one still shows its heading, and so
+  // creation order wins over which board happens to be listed first.
+  for (const name of storedGroups) {
+    const key = name.toLowerCase();
+    if (!byKey.has(key)) {
+      const section = { key, label: name, boards: [] };
+      byKey.set(key, section);
+      sections.push(section);
+    }
+  }
 
   for (const board of boards) {
     const slash = board.name.indexOf('/');
@@ -56,6 +67,8 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(true);
   const [showNewBoard, setShowNewBoard] = useState(false);
+  const [showNewGroup, setShowNewGroup] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
   const [newBoardName, setNewBoardName] = useState('');
   const [newBoardColor, setNewBoardColor] = useState(BOARD_COLORS[0]);
   const [newBoardCollaborators, setNewBoardCollaborators] = useState([]);
@@ -64,6 +77,14 @@ export default function Sidebar() {
   const [editingBoardColor, setEditingBoardColor] = useState(BOARD_COLORS[0]);
   const [editingBoardCollaborators, setEditingBoardCollaborators] = useState([]);
   const fileInputRef = useRef(null);
+
+  const handleCreateGroup = () => {
+    const name = newGroupName.trim();
+    if (!name) return;
+    dispatch({ type: 'ADD_GROUP', payload: name });
+    setNewGroupName('');
+    setShowNewGroup(false);
+  };
 
   const handleCreateBoard = () => {
     const name = newBoardName.trim();
@@ -171,7 +192,7 @@ export default function Sidebar() {
 
             {projectsOpen && (
               <div className="sidebar-section-content">
-                {groupBoards(state.boards).map((section) => (
+                {groupBoards(state.boards, state.groups).map((section) => (
                   <div key={section.key ?? 'ungrouped'} className="board-group">
                     {section.label !== null && (
                       <div className="board-group-label">{section.label}</div>
@@ -392,6 +413,44 @@ export default function Sidebar() {
                     onClick={() => setShowNewBoard(true)}
                   >
                     + Create Project
+                  </button>
+                )}
+
+                {showNewGroup ? (
+                  <div className="new-board-form">
+                    <input
+                      type="text"
+                      placeholder="Group name..."
+                      value={newGroupName}
+                      onChange={(e) => setNewGroupName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleCreateGroup();
+                        if (e.key === 'Escape') setShowNewGroup(false);
+                      }}
+                      autoFocus
+                      className="new-board-input"
+                    />
+                    <div className="new-board-actions">
+                      <button
+                        className="btn btn-sm btn-primary"
+                        onClick={handleCreateGroup}
+                      >
+                        Create
+                      </button>
+                      <button
+                        className="btn btn-sm btn-ghost"
+                        onClick={() => setShowNewGroup(false)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    className="btn-create-project"
+                    onClick={() => setShowNewGroup(true)}
+                  >
+                    + Create Group
                   </button>
                 )}
               </div>

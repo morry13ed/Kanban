@@ -45,6 +45,7 @@ export async function loadRemoteState() {
 function toSharedState(state) {
   return {
     boards: state.boards,
+    groups: state.groups || [],
     activeBoardId: state.activeBoardId,
   };
 }

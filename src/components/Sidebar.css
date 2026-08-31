@@ -236,6 +236,12 @@
   color: var(--accent);
 }
 
+.btn-create-project + .btn-create-project,
+.new-board-form + .btn-create-project,
+.btn-create-project + .new-board-form {
+  margin-top: 6px;
+}
+
 .btn-create-project {
   display: flex;
   align-items: center;

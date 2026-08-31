@@ -35,6 +35,7 @@ const SYNC_OFF = 'off';
 
 const defaultState = {
   boards: [],
+  groups: [],
   activeBoardId: null,
   theme: 'dark',
   filter: 'All',
@@ -49,6 +50,26 @@ function reducer(state, action) {
     // ── Filter ──
     case 'SET_FILTER':
       return { ...state, filter: action.payload };
+
+    // ── Groups ──
+    // A group is just a name; boards join it by carrying "Name/" as a prefix.
+    // Storing the name lets an empty group show its heading before any board
+    // moves in.
+    case 'ADD_GROUP': {
+      const name = action.payload.replace(/\/+$/, '').trim();
+      if (!name) return state;
+      const key = name.toLowerCase();
+      const groups = state.groups || [];
+      // Already a heading, whether stored or derived from a board's prefix.
+      const derived = state.boards.some((b) => {
+        const slash = b.name.indexOf('/');
+        return slash > 0 && b.name.slice(0, slash).trim().toLowerCase() === key;
+      });
+      if (derived || groups.some((g) => g.toLowerCase() === key)) {
+        return state;
+      }
+      return { ...state, groups: [...groups, name] };
+    }
 
     // ── Boards ──
     case 'ADD_BOARD': {
@@ -322,6 +343,7 @@ function reducer(state, action) {
       return {
         ...incoming,
         boards,
+        groups: incoming.groups || [],
         activeBoardId: activeStillExists
           ? state.activeBoardId
           : incoming.activeBoardId ?? boards[0]?.id ?? null,
