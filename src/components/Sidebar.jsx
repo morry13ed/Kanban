@@ -20,7 +20,6 @@ const SYNC_LABELS = {
 export default function Sidebar() {
   const { state, dispatch, syncStatus } = useApp();
   const [collapsed, setCollapsed] = useState(false);
-  const [projectsOpen, setProjectsOpen] = useState(true);
 
   // What is being created right now, and where:
   //   { kind: 'project' }
@@ -372,16 +371,7 @@ export default function Sidebar() {
       {!collapsed && (
         <nav className="sidebar-nav">
           <div className="sidebar-section">
-            <button
-              className="sidebar-section-header"
-              onClick={() => setProjectsOpen(!projectsOpen)}
-            >
-              <span className="section-icon">{projectsOpen ? '▾' : '▸'}</span>
-              <span>Projects</span>
-            </button>
-
-            {projectsOpen && (
-              <div className="sidebar-section-content">
+            <div className="sidebar-section-content">
                 {state.projects.map((project) => {
                   const directBoards = state.boards.filter(
                     (b) => b.projectId === project.id && !b.groupId
@@ -452,9 +442,8 @@ export default function Sidebar() {
                   >
                     + Create Project
                   </button>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           <div className="sidebar-footer">
