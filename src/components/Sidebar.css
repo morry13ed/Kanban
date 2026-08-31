@@ -97,6 +97,17 @@
   padding: 0;
 }
 
+.board-group + .board-group {
+  margin-top: 10px;
+}
+
+.board-group-label {
+  padding: 2px 4px 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
 .board-item {
   position: relative;
   display: flex;

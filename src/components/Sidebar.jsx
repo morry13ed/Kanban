@@ -17,6 +17,40 @@ const SYNC_LABELS = {
   },
 };
 
+// "Flash/ Design" files under a "Flash" heading; a name without a slash (or
+// with nothing before it) stays ungrouped. Grouping is derived from the name
+// alone, so renaming is all it takes to move a project.
+function groupBoards(boards) {
+  const sections = [];
+  const byKey = new Map();
+
+  for (const board of boards) {
+    const slash = board.name.indexOf('/');
+    const prefix = slash > 0 ? board.name.slice(0, slash).trim() : '';
+    const key = prefix ? prefix.toLowerCase() : null;
+
+    let section = key === null ? null : byKey.get(key);
+    if (key !== null && !section) {
+      section = { key, label: prefix, boards: [] };
+      byKey.set(key, section);
+      sections.push(section);
+    }
+    if (section) {
+      section.boards.push(board);
+    } else {
+      // Ungrouped items live in one anonymous section at the top.
+      let loose = sections[0]?.key === null ? sections[0] : null;
+      if (!loose) {
+        loose = { key: null, label: null, boards: [] };
+        sections.unshift(loose);
+      }
+      loose.boards.push(board);
+    }
+  }
+
+  return sections;
+}
+
 export default function Sidebar() {
   const { state, dispatch, syncStatus } = useApp();
   const [collapsed, setCollapsed] = useState(false);
@@ -137,8 +171,13 @@ export default function Sidebar() {
 
             {projectsOpen && (
               <div className="sidebar-section-content">
-                <ul className="board-list">
-                  {state.boards.map((board) => {
+                {groupBoards(state.boards).map((section) => (
+                  <div key={section.key ?? 'ungrouped'} className="board-group">
+                    {section.label !== null && (
+                      <div className="board-group-label">{section.label}</div>
+                    )}
+                    <ul className="board-list">
+                      {section.boards.map((board) => {
                     const isActive = state.activeBoardId === board.id;
                     const isEditing = editingBoardId === board.id;
                     const openCount = countOpenTasks(board);
@@ -267,8 +306,10 @@ export default function Sidebar() {
                         </button>
                       </li>
                     );
-                  })}
-                </ul>
+                      })}
+                    </ul>
+                  </div>
+                ))}
 
                 {showNewBoard ? (
                   <div className="new-board-form">
