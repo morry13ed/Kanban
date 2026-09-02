@@ -59,6 +59,7 @@ export default function TaskModal({
   const columnId = task?.columnId || defaultColumnId || '';
   const [impact, setImpact] = useState(task?.impact ?? LEVEL_DEFAULT);
   const [time, setTime] = useState(task?.time ?? LEVEL_DEFAULT);
+  const [demand, setDemand] = useState(task?.demand ?? LEVEL_MIN);
   const [isBug, setIsBug] = useState(task?.isBug ?? false);
   const [isFeature, setIsFeature] = useState(task?.isFeature ?? false);
   const [status, setStatus] = useState(task?.status ?? STATUS_NONE);
@@ -122,7 +123,7 @@ export default function TaskModal({
   };
 
   const assigneeOptions = ['Unassigned', ...members];
-  const priority = getPriority({ impact, time });
+  const score = getPriority({ impact, time, demand });
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -136,6 +137,7 @@ export default function TaskModal({
       dueDate,
       impact: roundLevel(impact),
       time: roundLevel(time),
+      demand: roundLevel(demand),
       isBug,
       isFeature,
       attachments,
@@ -318,9 +320,29 @@ export default function TaskModal({
             </div>
           </div>
 
-          <div className="priority-readout">
-            <span>Priority</span>
-            <span className="priority-score">{priority}</span>
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="task-demand">
+                Demand{' '}
+                <span className="level-value">{formatLevel(demand)}</span>
+              </label>
+              <input
+                id="task-demand"
+                type="range"
+                min={LEVEL_MIN}
+                max={LEVEL_MAX}
+                step="any"
+                value={demand}
+                onChange={(e) => setDemand(Number(e.target.value))}
+              />
+            </div>
+
+            <div className="form-group score-group">
+              <div className="priority-readout">
+                <span>Score</span>
+                <span className="priority-score">{score}</span>
+              </div>
+            </div>
           </div>
 
           <div className="form-status">

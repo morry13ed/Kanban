@@ -386,11 +386,15 @@
   box-shadow: 0 0 0 3px var(--active-bg);
 }
 
+/* Sits in the right half of the demand row, lined up with the slider. */
+.score-group {
+  justify-content: flex-end;
+}
+
 .priority-readout {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: -6px;
   padding: 8px 10px;
   border-radius: 6px;
   background: var(--hover);

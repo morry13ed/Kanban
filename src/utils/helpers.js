@@ -29,6 +29,7 @@ export function createTask({
   dueDate = '',
   impact = LEVEL_DEFAULT,
   time = LEVEL_DEFAULT,
+  demand = LEVEL_MIN,
   isBug = false,
   isFeature = false,
   attachments = [],
@@ -45,6 +46,7 @@ export function createTask({
     dueDate,
     impact,
     time,
+    demand,
     isBug,
     isFeature,
     attachments,
@@ -68,22 +70,28 @@ function clampLevel(value) {
   return Math.min(LEVEL_MAX, Math.max(LEVEL_MIN, n));
 }
 
-export const IMPACT_WEIGHT = 0.6;
-export const TIME_WEIGHT = 0.4;
+export const DEMAND_WEIGHT = 0.5;
+export const IMPACT_WEIGHT = 0.3;
+export const TIME_WEIGHT = 0.2;
 
-// Impact pushes priority up, time pulls it down, weighted 60/40. Scaled to
-// 0-100 so every combination lands somewhere on a readable scale:
-//   high impact + low time  = 100  (do this first)
-//   high impact + high time =  60
-//   low impact  + low time  =  40
-//   low impact  + high time =   0  (do this last)
-// Impact outweighing time is what puts the big-but-slow task above the
-// small-and-quick one.
+// Demand (it has to happen) carries double impact's weight, and duration
+// pulls down but can never bury a high-demand task. Scaled to 0-100:
+//   max demand + max impact + short duration = 100
+//   max demand alone, slow and low impact    =  50
+//   no demand, high impact, short duration   =  50
+//   no demand, low impact, long duration     =   0
+// A task predating the demand slider defaults to no demand, so its score
+// re-settles on the new scale without jumping any queue.
 export function getPriority(task) {
   const span = LEVEL_MAX - LEVEL_MIN;
+  const demand = (clampLevel(task?.demand ?? LEVEL_MIN) - LEVEL_MIN) / span;
   const impact = (clampLevel(task?.impact) - LEVEL_MIN) / span;
   const time = (clampLevel(task?.time) - LEVEL_MIN) / span;
-  const score = IMPACT_WEIGHT * impact - TIME_WEIGHT * time + TIME_WEIGHT;
+  const score =
+    DEMAND_WEIGHT * demand +
+    IMPACT_WEIGHT * impact -
+    TIME_WEIGHT * time +
+    TIME_WEIGHT;
 
   return Math.round(score * 100);
 }
@@ -104,7 +112,7 @@ export const BOARD_COLORS = [
 export const SORT_OPTIONS = [
   { value: 'manual', label: 'Manual' },
   { value: 'status', label: 'Status' },
-  { value: 'priority', label: 'Priority' },
+  { value: 'priority', label: 'Score' },
   { value: 'impact', label: 'Impact' },
   { value: 'dueDate', label: 'Due date' },
   { value: 'assignee', label: 'Assignee' },
