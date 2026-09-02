@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
-  formatLevel,
+  getPriority,
   STATUS_ACTIVE,
   STATUS_PAUSED,
 } from '../utils/helpers';
@@ -284,12 +284,9 @@ export default function TaskCard({
             {task.assignee}
           </span>
         )}
-        <span
-          className="task-impact"
-          title={`Impact ${formatLevel(task.impact)}`}
-        >
+        <span className="task-score" title={`Score ${getPriority(task)}`}>
           <GaugeIcon />
-          {formatLevel(task.impact)}
+          {getPriority(task)}
         </span>
         {task.dueDate && (
           <span className={`task-due ${isOverdue ? 'overdue' : ''}`}>

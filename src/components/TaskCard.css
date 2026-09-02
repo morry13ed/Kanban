@@ -219,7 +219,7 @@
 }
 
 /* Matches .task-due exactly, with a gauge glyph standing in for a label. */
-.task-impact {
+.task-score {
   display: inline-flex;
   align-items: center;
   gap: 3px;
