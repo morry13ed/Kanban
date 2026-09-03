@@ -1,7 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { exportState, importState } from '../utils/storage';
-import { BOARD_COLORS, countOpenTasks } from '../utils/helpers';
+import {
+  BOARD_COLORS,
+  DEFAULT_MEMBER_COLOR,
+  countOpenTasks,
+} from '../utils/helpers';
+import ColorPicker from './ColorPicker';
 import './Sidebar.css';
 
 const SYNC_LABELS = {
@@ -48,6 +53,79 @@ export default function Sidebar() {
   const [editingBoardCollaborators, setEditingBoardCollaborators] = useState([]);
   const fileInputRef = useRef(null);
 
+  // Which tiny colour picker is open:
+  //   { target: 'new-collab' | 'edit-collab', index }
+  //   { target: 'new-board' | 'edit-board' }
+  const [colorPicking, setColorPicking] = useState(null);
+  const colorPickerRef = useRef(null);
+
+  useEffect(() => {
+    if (!colorPicking) return;
+    const onPointerDown = (e) => {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(e.target)) {
+        setColorPicking(null);
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [colorPicking]);
+
+  const setCollabColor = (target, index, color) => {
+    const setter =
+      target === 'new-collab'
+        ? setNewBoardCollaborators
+        : setEditingBoardCollaborators;
+    setter((current) =>
+      current.map((c, i) => (i === index ? { ...c, color } : c))
+    );
+  };
+
+  const renderColorPicker = (value, onApply) => (
+    <div className="picker-anchor" ref={colorPickerRef}>
+      <ColorPicker
+        value={value}
+        onApply={(hex) => {
+          onApply(hex);
+          setColorPicking(null);
+        }}
+        onClose={() => setColorPicking(null)}
+      />
+    </div>
+  );
+
+  const renderCollabDot = (target, collab, idx) => (
+    <button
+      type="button"
+      className="collab-color-dot"
+      style={{ backgroundColor: collab.color || DEFAULT_MEMBER_COLOR }}
+      title="Collaborator colour"
+      onClick={(e) => {
+        e.stopPropagation();
+        setColorPicking((current) =>
+          current?.target === target && current.index === idx
+            ? null
+            : { target, index: idx }
+        );
+      }}
+    />
+  );
+
+  const renderSpectrumDot = (target, currentColor) => (
+    <button
+      type="button"
+      className={`board-color-dot spectrum ${
+        BOARD_COLORS.includes(currentColor) ? '' : 'selected'
+      }`}
+      title="Custom colour"
+      onClick={(e) => {
+        e.stopPropagation();
+        setColorPicking((current) =>
+          current?.target === target ? null : { target }
+        );
+      }}
+    />
+  );
+
   const openForm = (spec) => {
     setCreating(spec);
     setNewName('');
@@ -73,7 +151,11 @@ export default function Sidebar() {
       });
     } else {
       const members = newBoardCollaborators
-        .map(({ name: n, email }) => ({ name: n.trim(), email: email.trim() }))
+        .map(({ name: n, email, color }) => ({
+          name: n.trim(),
+          email: email.trim(),
+          ...(color ? { color } : {}),
+        }))
         .filter((c) => c.name);
       dispatch({
         type: 'ADD_BOARD',
@@ -218,6 +300,7 @@ export default function Sidebar() {
       <div className="collaborators-section">
         {newBoardCollaborators.map((collab, idx) => (
           <div key={idx} className="collaborator-row">
+            {renderCollabDot('new-collab', collab, idx)}
             <input
               type="text"
               placeholder="Name"
@@ -240,6 +323,11 @@ export default function Sidebar() {
               }}
               className="new-board-input"
             />
+            {colorPicking?.target === 'new-collab' &&
+              colorPicking.index === idx &&
+              renderColorPicker(collab.color || DEFAULT_MEMBER_COLOR, (hex) =>
+                setCollabColor('new-collab', idx, hex)
+              )}
           </div>
         ))}
         <button
@@ -264,6 +352,9 @@ export default function Sidebar() {
             onClick={() => setNewBoardColor(c)}
           />
         ))}
+        {renderSpectrumDot('new-board', newBoardColor)}
+        {colorPicking?.target === 'new-board' &&
+          renderColorPicker(newBoardColor, setNewBoardColor)}
       </div>
       <div className="new-board-actions">
         <button className="btn btn-sm btn-primary" onClick={handleCreate}>
@@ -307,6 +398,7 @@ export default function Sidebar() {
             >
               {editingBoardCollaborators.map((collab, idx) => (
                 <div key={idx} className="collaborator-row">
+                  {renderCollabDot('edit-collab', collab, idx)}
                   <input
                     type="text"
                     placeholder="Name"
@@ -329,6 +421,12 @@ export default function Sidebar() {
                     }}
                     className="new-board-input"
                   />
+                  {colorPicking?.target === 'edit-collab' &&
+                    colorPicking.index === idx &&
+                    renderColorPicker(
+                      collab.color || DEFAULT_MEMBER_COLOR,
+                      (hex) => setCollabColor('edit-collab', idx, hex)
+                    )}
                 </div>
               ))}
               <button
@@ -359,6 +457,9 @@ export default function Sidebar() {
                   onClick={() => setEditingBoardColor(c)}
                 />
               ))}
+              {renderSpectrumDot('edit-board', editingBoardColor)}
+              {colorPicking?.target === 'edit-board' &&
+                renderColorPicker(editingBoardColor, setEditingBoardColor)}
             </div>
           </div>
         ) : (

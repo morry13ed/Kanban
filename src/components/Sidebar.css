@@ -493,9 +493,51 @@
 }
 
 .collaborator-row {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  padding-left: 18px;
+}
+
+.collab-color-dot {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* A zero-size anchor so the picker floats without disturbing the row that
+   opened it. */
+.picker-anchor {
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+.picker-anchor .color-popover {
+  right: auto;
+  left: 0;
+  top: 6px;
+}
+
+.board-color-dot.spectrum,
+.color-dot.spectrum {
+  background: conic-gradient(
+    hsl(0, 75%, 55%),
+    hsl(60, 75%, 55%),
+    hsl(120, 75%, 55%),
+    hsl(180, 75%, 55%),
+    hsl(240, 75%, 55%),
+    hsl(300, 75%, 55%),
+    hsl(360, 75%, 55%)
+  );
 }
 
 .btn-link {
