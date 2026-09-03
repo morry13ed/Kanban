@@ -542,6 +542,15 @@
   position: static;
 }
 
+/* No selection ring on the rainbow dot - the gradient is busy enough. */
+.board-color-dot.spectrum,
+.board-color-dot.spectrum.selected,
+.color-dot.spectrum,
+.color-dot.spectrum.selected {
+  border: none;
+  transform: none;
+}
+
 .board-color-dot.spectrum,
 .color-dot.spectrum {
   background: conic-gradient(
