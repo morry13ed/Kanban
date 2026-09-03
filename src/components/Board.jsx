@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   sortTasks,
@@ -25,6 +25,26 @@ export default function Board() {
   const [newColumnName, setNewColumnName] = useState('');
   const [newColumnType, setNewColumnType] = useState(DEFAULT_COLUMN_TYPE);
   const [draggedTaskId, setDraggedTaskId] = useState(null);
+  const [boardMenuOpen, setBoardMenuOpen] = useState(false);
+  const boardMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!boardMenuOpen) return;
+    const onPointerDown = (e) => {
+      if (boardMenuRef.current && !boardMenuRef.current.contains(e.target)) {
+        setBoardMenuOpen(false);
+      }
+    };
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setBoardMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [boardMenuOpen]);
 
   const board = state.boards.find((b) => b.id === state.activeBoardId);
 
@@ -239,12 +259,30 @@ export default function Board() {
               </button>
             ))}
           </div>
-          <button
-            className="btn btn-sm btn-danger"
-            onClick={() => setShowDeleteConfirm(true)}
-          >
-            Delete Board
-          </button>
+          <div className="board-menu-wrap" ref={boardMenuRef}>
+            <button
+              type="button"
+              className="board-menu-btn"
+              title="Board options"
+              onClick={() => setBoardMenuOpen((open) => !open)}
+            >
+              ⋯
+            </button>
+            {boardMenuOpen && (
+              <div className="board-menu">
+                <button
+                  type="button"
+                  className="board-menu-item danger"
+                  onClick={() => {
+                    setBoardMenuOpen(false);
+                    setShowDeleteConfirm(true);
+                  }}
+                >
+                  Delete board
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
