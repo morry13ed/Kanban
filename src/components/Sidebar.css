@@ -300,7 +300,8 @@
 }
 
 .board-item.editing {
-  background: rgba(250, 204, 21, 0.08);
+  /* A wash of the primary, high transparency. */
+  background: var(--active-bg);
 }
 
 .board-dot {
@@ -357,8 +358,6 @@
   flex-direction: column;
   gap: 6px;
   flex: 1;
-  /* The save button is positioned absolutely, so keep clear of it. */
-  padding-right: 22px;
 }
 
 .board-color-picker {
@@ -395,6 +394,16 @@
 }
 
 .board-item:hover .board-edit-btn,
+.board-item.editing > .board-dot {
+  display: none;
+}
+
+.board-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
 .board-item.editing .board-edit-btn {
   opacity: 1;
 }
@@ -493,16 +502,24 @@
 }
 
 .collaborator-row {
-  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding-left: 18px;
 }
 
+.collab-name-wrap {
+  position: relative;
+}
+
+.collab-name-wrap .new-board-input {
+  width: 100%;
+  padding-right: 26px;
+}
+
+/* Inside the right edge of the name input. */
 .collab-color-dot {
   position: absolute;
-  left: 0;
+  right: 8px;
   top: 50%;
   transform: translateY(-50%);
   width: 12px;
@@ -513,18 +530,14 @@
   cursor: pointer;
 }
 
-/* A zero-size anchor so the picker floats without disturbing the row that
-   opened it. */
-.picker-anchor {
-  position: relative;
-  width: 0;
-  height: 0;
+/* Escapes every scroll container; coordinates come from the clicked dot. */
+.picker-fixed {
+  position: fixed;
+  z-index: 140;
 }
 
-.picker-anchor .color-popover {
-  right: auto;
-  left: 0;
-  top: 6px;
+.picker-fixed .color-popover {
+  position: static;
 }
 
 .board-color-dot.spectrum,

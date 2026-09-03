@@ -80,8 +80,22 @@ export default function Sidebar() {
     );
   };
 
+  // Fixed positioning, clamped to the viewport, so the sidebar's scroll
+  // container can't clip the popover.
+  const anchorAt = (el) => {
+    const rect = el.getBoundingClientRect();
+    return {
+      left: Math.max(8, Math.min(rect.left, window.innerWidth - 222)),
+      top: Math.min(rect.bottom + 6, window.innerHeight - 110),
+    };
+  };
+
   const renderColorPicker = (value, onApply) => (
-    <div className="picker-anchor" ref={colorPickerRef}>
+    <div
+      className="picker-fixed"
+      ref={colorPickerRef}
+      style={{ left: colorPicking.left, top: colorPicking.top }}
+    >
       <ColorPicker
         value={value}
         onApply={(hex) => {
@@ -101,10 +115,11 @@ export default function Sidebar() {
       title="Collaborator colour"
       onClick={(e) => {
         e.stopPropagation();
+        const at = anchorAt(e.currentTarget);
         setColorPicking((current) =>
           current?.target === target && current.index === idx
             ? null
-            : { target, index: idx }
+            : { target, index: idx, ...at }
         );
       }}
     />
@@ -119,8 +134,9 @@ export default function Sidebar() {
       title="Custom colour"
       onClick={(e) => {
         e.stopPropagation();
+        const at = anchorAt(e.currentTarget);
         setColorPicking((current) =>
-          current?.target === target ? null : { target }
+          current?.target === target ? null : { target, ...at }
         );
       }}
     />
@@ -300,18 +316,20 @@ export default function Sidebar() {
       <div className="collaborators-section">
         {newBoardCollaborators.map((collab, idx) => (
           <div key={idx} className="collaborator-row">
-            {renderCollabDot('new-collab', collab, idx)}
-            <input
-              type="text"
-              placeholder="Name"
-              value={collab.name}
-              onChange={(e) => {
-                const next = [...newBoardCollaborators];
-                next[idx] = { ...next[idx], name: e.target.value };
-                setNewBoardCollaborators(next);
-              }}
-              className="new-board-input"
-            />
+            <div className="collab-name-wrap">
+              <input
+                type="text"
+                placeholder="Name"
+                value={collab.name}
+                onChange={(e) => {
+                  const next = [...newBoardCollaborators];
+                  next[idx] = { ...next[idx], name: e.target.value };
+                  setNewBoardCollaborators(next);
+                }}
+                className="new-board-input"
+              />
+              {renderCollabDot('new-collab', collab, idx)}
+            </div>
             <input
               type="email"
               placeholder="Email"
@@ -398,18 +416,20 @@ export default function Sidebar() {
             >
               {editingBoardCollaborators.map((collab, idx) => (
                 <div key={idx} className="collaborator-row">
-                  {renderCollabDot('edit-collab', collab, idx)}
-                  <input
-                    type="text"
-                    placeholder="Name"
-                    value={collab.name}
-                    onChange={(e) => {
-                      const next = [...editingBoardCollaborators];
-                      next[idx] = { ...next[idx], name: e.target.value };
-                      setEditingBoardCollaborators(next);
-                    }}
-                    className="new-board-input"
-                  />
+                  <div className="collab-name-wrap">
+                    <input
+                      type="text"
+                      placeholder="Name"
+                      value={collab.name}
+                      onChange={(e) => {
+                        const next = [...editingBoardCollaborators];
+                        next[idx] = { ...next[idx], name: e.target.value };
+                        setEditingBoardCollaborators(next);
+                      }}
+                      className="new-board-input"
+                    />
+                    {renderCollabDot('edit-collab', collab, idx)}
+                  </div>
                   <input
                     type="email"
                     placeholder="Email"
@@ -461,6 +481,18 @@ export default function Sidebar() {
               {colorPicking?.target === 'edit-board' &&
                 renderColorPicker(editingBoardColor, setEditingBoardColor)}
             </div>
+            <div className="board-edit-actions">
+              <button
+                type="button"
+                className="btn btn-sm btn-primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  saveEditingBoard(board);
+                }}
+              >
+                ✓ Ok
+              </button>
+            </div>
           </div>
         ) : (
           <>
@@ -475,21 +507,19 @@ export default function Sidebar() {
             )}
           </>
         )}
-        <button
-          type="button"
-          className="board-edit-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (isEditing) {
-              saveEditingBoard(board);
-            } else {
+        {!isEditing && (
+          <button
+            type="button"
+            className="board-edit-btn"
+            onClick={(e) => {
+              e.stopPropagation();
               startEditingBoard(board);
-            }
-          }}
-          title={isEditing ? 'Save changes' : 'Edit board'}
-        >
-          {isEditing ? '✓' : '✎'}
-        </button>
+            }}
+            title="Edit board"
+          >
+            ✎
+          </button>
+        )}
       </li>
     );
   };
