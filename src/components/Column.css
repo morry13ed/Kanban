@@ -56,6 +56,22 @@
   align-items: flex-start;
 }
 
+/* The sort/add/delete buttons are inert and frosted during editing anyway;
+   hiding them lets the name input take the full column width. */
+.column-header.editing .column-actions {
+  display: none;
+}
+
+/* The usual --hover pill vanishes against the darkened frost, so the tabs
+   get a white backing here - translucent, keeping the frost visible. */
+.column-edit .type-toggle {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+[data-theme='dark'] .column-edit .type-toggle {
+  background: rgba(255, 255, 255, 0.14);
+}
+
 .column-edit {
   display: flex;
   flex-direction: column;
