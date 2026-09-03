@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   sortTasks,
+  getMemberColor,
   DEFAULT_SORT,
   DEFAULT_COLUMN_TYPE,
   COLUMN_TYPES,
@@ -325,6 +326,13 @@ export default function Board() {
       {showTaskModal && (
         <TaskModal
           task={editingTask}
+          memberColorOf={(name) => getMemberColor(board, name)}
+          onMemberColorChange={(name, color) =>
+            dispatch({
+              type: 'SET_MEMBER_COLOR',
+              payload: { boardId: board.id, name, color },
+            })
+          }
           members={boardMembers}
           defaultColumnId={defaultColumnId || board.columns[0]?.id}
           onSave={handleSaveTask}

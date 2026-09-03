@@ -10,6 +10,7 @@ import {
   TASK_STATUS_OPTIONS,
 } from '../utils/helpers';
 import SegmentedControl from './SegmentedControl';
+import ColorPicker from './ColorPicker';
 import {
   ACCEPTED_TYPES,
   fileToAttachment,
@@ -43,10 +44,29 @@ function FileGlyph({ name }) {
   return <span className="attachment-ext">{ext || 'FILE'}</span>;
 }
 
+function ChevronIcon() {
+  return (
+    <svg
+      className="select-chevron"
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m4 6.2 4 4 4-4" />
+    </svg>
+  );
+}
+
 export default function TaskModal({
   task,
   defaultColumnId,
   members = [],
+  memberColorOf = () => undefined,
+  onMemberColorChange,
   onSave,
   onClose,
 }) {
@@ -66,7 +86,23 @@ export default function TaskModal({
   const [attachments, setAttachments] = useState(task?.attachments ?? []);
   const [attachError, setAttachError] = useState('');
   const [preview, setPreview] = useState(null);
+  const [assigneeMenuOpen, setAssigneeMenuOpen] = useState(false);
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const assigneeRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  // Both assignee popovers dismiss on a click anywhere else.
+  useEffect(() => {
+    if (!assigneeMenuOpen && !colorPickerOpen) return;
+    const onPointerDown = (e) => {
+      if (assigneeRef.current && !assigneeRef.current.contains(e.target)) {
+        setAssigneeMenuOpen(false);
+        setColorPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [assigneeMenuOpen, colorPickerOpen]);
 
   useEffect(() => {
     if (!preview) return;
@@ -263,17 +299,73 @@ export default function TaskModal({
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="task-assignee">Assignee</label>
-              <select
-                id="task-assignee"
-                value={assignee}
-                onChange={(e) => setAssignee(e.target.value)}
-              >
-                {assigneeOptions.map((u) => (
-                  <option key={u} value={u}>
-                    {u}
-                  </option>
-                ))}
-              </select>
+              <div className="assignee-field" ref={assigneeRef}>
+                <button
+                  type="button"
+                  id="task-assignee"
+                  className="assignee-select"
+                  onClick={() => {
+                    setColorPickerOpen(false);
+                    setAssigneeMenuOpen((open) => !open);
+                  }}
+                >
+                  <span className="assignee-select-value">{assignee}</span>
+                  <ChevronIcon />
+                </button>
+
+                {assignee !== 'Unassigned' && (
+                  <button
+                    type="button"
+                    className="assignee-color-dot"
+                    style={{ backgroundColor: memberColorOf(assignee) }}
+                    title={`Colour for ${assignee}`}
+                    onClick={() => {
+                      setAssigneeMenuOpen(false);
+                      setColorPickerOpen((open) => !open);
+                    }}
+                  />
+                )}
+
+                {assigneeMenuOpen && (
+                  <div className="assignee-menu">
+                    {assigneeOptions.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        className={`assignee-menu-item ${
+                          option === assignee ? 'active' : ''
+                        }`}
+                        onClick={() => {
+                          setAssignee(option);
+                          setAssigneeMenuOpen(false);
+                        }}
+                      >
+                        {option !== 'Unassigned' && (
+                          <span
+                            className="assignee-menu-dot"
+                            style={{ backgroundColor: memberColorOf(option) }}
+                          />
+                        )}
+                        <span className="assignee-menu-name">{option}</span>
+                        {option === assignee && (
+                          <span className="assignee-menu-check">✓</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {colorPickerOpen && (
+                  <ColorPicker
+                    value={memberColorOf(assignee)}
+                    onApply={(hex) => {
+                      onMemberColorChange?.(assignee, hex);
+                      setColorPickerOpen(false);
+                    }}
+                    onClose={() => setColorPickerOpen(false)}
+                  />
+                )}
+              </div>
             </div>
 
             <div className="form-group">

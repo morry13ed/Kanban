@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   getPriority,
+  getMemberColor,
+  readableTextOn,
   STATUS_ACTIVE,
   STATUS_PAUSED,
 } from '../utils/helpers';
@@ -113,7 +115,9 @@ export default function TaskCard({
   onDropOnTask,
   dimmed,
 }) {
-  const { dispatch } = useApp();
+  const { state, dispatch } = useApp();
+  const board = state.boards.find((b) => b.id === boardId);
+  const assigneeColor = getMemberColor(board, task.assignee);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(task.title);
   // 'top' | 'bottom' — which side of this card the drop would land on.
@@ -278,7 +282,13 @@ export default function TaskCard({
         )}
         {task.assignee !== 'Unassigned' && (
           <span className="task-assignee">
-            <span className="assignee-avatar">
+            <span
+              className="assignee-avatar"
+              style={{
+                backgroundColor: assigneeColor,
+                color: readableTextOn(assigneeColor),
+              }}
+            >
               {task.assignee.charAt(0)}
             </span>
             {task.assignee}

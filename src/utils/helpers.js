@@ -277,3 +277,66 @@ export function normalizeState(saved) {
 
   return { ...saved, projects, groups: [], boards };
 }
+
+// ── Member colours ──
+export const DEFAULT_MEMBER_COLOR = '#3b82f6';
+
+export function normalizeMember(member) {
+  return typeof member === 'string'
+    ? { name: member, email: '', color: undefined }
+    : member;
+}
+
+export function getMemberColor(board, name) {
+  const member = (board?.members || [])
+    .map(normalizeMember)
+    .find((m) => m.name === name);
+  return member?.color || DEFAULT_MEMBER_COLOR;
+}
+
+export function isValidHex(value) {
+  return /^#[0-9a-fA-F]{6}$/.test(value);
+}
+
+// Dark lettering on bright backgrounds, white on dark ones.
+export function readableTextOn(hex) {
+  if (!isValidHex(hex)) return '#ffffff';
+  const channel = (i) => {
+    const v = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  };
+  const luminance =
+    0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
+  return luminance > 0.45 ? '#1a1d2b' : '#ffffff';
+}
+
+export function hslToHex(h, s, l) {
+  s /= 100;
+  l /= 100;
+  const k = (n) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n) =>
+    Math.round(
+      255 * (l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))))
+    )
+      .toString(16)
+      .padStart(2, '0');
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+// Hue of a hex colour, for positioning the slider when a hex is typed.
+export function hexHue(hex) {
+  if (!isValidHex(hex)) return 220;
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  if (max === min) return 0;
+  const d = max - min;
+  let h;
+  if (max === r) h = ((g - b) / d) % 6;
+  else if (max === g) h = (b - r) / d + 2;
+  else h = (r - g) / d + 4;
+  return Math.round((h * 60 + 360) % 360);
+}

@@ -117,7 +117,7 @@ export default function Sidebar() {
     const members = (board.members || []).map((m) =>
       typeof m === 'string'
         ? { name: m, email: '' }
-        : { name: m.name || '', email: m.email || '' }
+        : { name: m.name || '', email: m.email || '', color: m.color }
     );
     setEditingBoardCollaborators(members);
   };
@@ -126,7 +126,11 @@ export default function Sidebar() {
     if (!editingBoardId) return;
     const name = editingBoardName.trim() || board.name;
     const members = editingBoardCollaborators
-      .map(({ name: n, email }) => ({ name: n.trim(), email: email.trim() }))
+      .map(({ name: n, email, color }) => ({
+        name: n.trim(),
+        email: email.trim(),
+        ...(color ? { color } : {}),
+      }))
       .filter((c) => c.name);
     dispatch({
       type: 'UPDATE_BOARD',

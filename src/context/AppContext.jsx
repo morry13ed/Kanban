@@ -133,6 +133,27 @@ function reducer(state, action) {
     case 'SET_ACTIVE_BOARD':
       return { ...state, activeBoardId: action.payload, filter: 'All' };
 
+    // Colour for one board member, creating the member entry if the name only
+    // existed as a task assignee so far.
+    case 'SET_MEMBER_COLOR': {
+      const { boardId, name, color } = action.payload;
+      return {
+        ...state,
+        boards: state.boards.map((b) => {
+          if (b.id !== boardId) return b;
+          const members = (b.members || []).map((m) =>
+            typeof m === 'string' ? { name: m, email: '' } : m
+          );
+          const exists = members.some((m) => m.name === name);
+          return {
+            ...b,
+            members: exists
+              ? members.map((m) => (m.name === name ? { ...m, color } : m))
+              : [...members, { name, email: '', color }],
+          };
+        }),
+      };
+    }
     case 'UPDATE_BOARD': {
       return {
         ...state,
