@@ -1,4 +1,5 @@
 .column {
+  position: relative;
   min-width: 280px;
   max-width: 320px;
   flex: 1;
@@ -204,21 +205,44 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  filter: blur(0);
-  transition: filter 0.3s ease;
 }
 
-/* While the column is being edited its cards soften out of focus. Clicks on
-   them count as clicking outside, which commits the edit, so they also stop
-   being interactive underneath the blur. */
-.column.editing .column-tasks {
-  filter: blur(3px);
+/* While the column is being edited, a frosted layer eases in over the whole
+   column - cards, header buttons, background - with the editor raised above
+   it. Everything underneath stops taking pointer events, so a click on the
+   frosted area counts as clicking outside, which commits the edit. */
+.column::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  backdrop-filter: blur(0);
+  -webkit-backdrop-filter: blur(0);
+  background: rgba(10, 12, 20, 0);
+  transition: backdrop-filter 0.3s ease, background 0.3s ease;
+  z-index: 5;
+}
+
+.column.editing::after {
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  background: rgba(10, 12, 20, 0.16);
+}
+
+.column.editing .column-tasks,
+.column.editing .column-actions {
   pointer-events: none;
   user-select: none;
 }
 
+.column.editing .column-edit {
+  position: relative;
+  z-index: 6;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .column-tasks {
+  .column::after {
     transition: none;
   }
 }
