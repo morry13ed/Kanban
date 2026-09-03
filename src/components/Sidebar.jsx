@@ -7,6 +7,7 @@ import {
   countOpenTasks,
 } from '../utils/helpers';
 import ColorPicker from './ColorPicker';
+import DashedButton from './DashedButton';
 import './Sidebar.css';
 
 const SYNC_LABELS = {
@@ -48,6 +49,7 @@ export default function Sidebar() {
   const popoverRef = useRef(null);
 
   const [editingBoardId, setEditingBoardId] = useState(null);
+  const [closingBoardId, setClosingBoardId] = useState(null);
   const [editingBoardName, setEditingBoardName] = useState('');
   const [editingBoardColor, setEditingBoardColor] = useState(BOARD_COLORS[0]);
   const [editingBoardCollaborators, setEditingBoardCollaborators] = useState([]);
@@ -220,6 +222,19 @@ export default function Sidebar() {
     setEditingBoardCollaborators(members);
   };
 
+  // Keeps the editor mounted for one transition's worth of time so the
+  // collapse can play before it unmounts.
+  const beginCloseEditor = (boardId) => {
+    setEditingBoardId(null);
+    setEditingBoardCollaborators([]);
+    setClosingBoardId(boardId);
+    setTimeout(() => setClosingBoardId(null), 230);
+  };
+
+  const cancelEditingBoard = () => {
+    if (editingBoardId) beginCloseEditor(editingBoardId);
+  };
+
   const saveEditingBoard = (board) => {
     if (!editingBoardId) return;
     const name = editingBoardName.trim() || board.name;
@@ -237,8 +252,7 @@ export default function Sidebar() {
         updates: { name, color: editingBoardColor, members },
       },
     });
-    setEditingBoardId(null);
-    setEditingBoardCollaborators([]);
+    beginCloseEditor(board.id);
   };
 
   const toggleIn = (setter) => (id) => {
@@ -304,6 +318,7 @@ export default function Sidebar() {
 
   const renderBoardForm = () => (
     <div className="new-board-form">
+      <span className="sidebar-mini-label">Board name</span>
       <input
         type="text"
         placeholder="Board name..."
@@ -313,6 +328,7 @@ export default function Sidebar() {
         autoFocus
         className="new-board-input"
       />
+      <span className="sidebar-mini-label">Collaborators</span>
       <div className="collaborators-section">
         {newBoardCollaborators.map((collab, idx) => (
           <div key={idx} className="collaborator-row">
@@ -348,9 +364,8 @@ export default function Sidebar() {
               )}
           </div>
         ))}
-        <button
-          type="button"
-          className="btn-link"
+        <DashedButton
+          small
           onClick={() =>
             setNewBoardCollaborators([
               ...newBoardCollaborators,
@@ -358,8 +373,8 @@ export default function Sidebar() {
             ])
           }
         >
-          Add collaborator
-        </button>
+          + Add collaborator
+        </DashedButton>
       </div>
       <div className="color-picker">
         {BOARD_COLORS.map((c) => (
@@ -388,21 +403,24 @@ export default function Sidebar() {
   const renderBoardRow = (board) => {
     const isActive = state.activeBoardId === board.id;
     const isEditing = editingBoardId === board.id;
+    const isClosing = closingBoardId === board.id;
     const openCount = countOpenTasks(board);
 
     return (
       <li
         key={board.id}
         className={`board-item ${isActive ? 'active' : ''} ${
-          isEditing ? 'editing' : ''
+          isEditing || isClosing ? 'editing' : ''
         }`}
         onClick={() =>
           dispatch({ type: 'SET_ACTIVE_BOARD', payload: board.id })
         }
       >
         <span className="board-dot" style={{ backgroundColor: board.color }} />
-        {isEditing ? (
+        {isEditing || isClosing ? (
+          <div className={`board-editor-well ${isEditing ? 'open' : ''}`}>
           <div className="board-edit-content">
+            <span className="sidebar-mini-label">Board name</span>
             <input
               type="text"
               value={editingBoardName}
@@ -410,6 +428,7 @@ export default function Sidebar() {
               onClick={(e) => e.stopPropagation()}
               className="board-name-input"
             />
+            <span className="sidebar-mini-label">Collaborators</span>
             <div
               className="collaborators-section"
               onClick={(e) => e.stopPropagation()}
@@ -449,9 +468,8 @@ export default function Sidebar() {
                     )}
                 </div>
               ))}
-              <button
-                type="button"
-                className="btn-link"
+              <DashedButton
+                small
                 onClick={() =>
                   setEditingBoardCollaborators([
                     ...editingBoardCollaborators,
@@ -459,8 +477,8 @@ export default function Sidebar() {
                   ])
                 }
               >
-                Add collaborator
-              </button>
+                + Add collaborator
+              </DashedButton>
             </div>
             <div
               className="board-color-picker"
@@ -484,6 +502,16 @@ export default function Sidebar() {
             <div className="board-edit-actions">
               <button
                 type="button"
+                className="btn btn-sm btn-ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  cancelEditingBoard();
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
                 className="btn btn-sm btn-primary"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -493,6 +521,7 @@ export default function Sidebar() {
                 ✓ Ok
               </button>
             </div>
+          </div>
           </div>
         ) : (
           <>
@@ -701,8 +730,8 @@ export default function Sidebar() {
                             }) ? (
                               renderNameForm('Group name...')
                             ) : (
-                              <button
-                                className="btn-create-inline"
+                              <DashedButton
+                                small
                                 onClick={() =>
                                   openForm({
                                     kind: 'group',
@@ -711,7 +740,7 @@ export default function Sidebar() {
                                 }
                               >
                                 + Create group
-                              </button>
+                              </DashedButton>
                             )}
                           </div>
                         )}
@@ -726,12 +755,9 @@ export default function Sidebar() {
                 {isCreating({ kind: 'project' }) ? (
                   renderNameForm('Project name...')
                 ) : (
-                  <button
-                    className="btn-create-project"
-                    onClick={() => openForm({ kind: 'project' })}
-                  >
+                  <DashedButton onClick={() => openForm({ kind: 'project' })}>
                     + Create Project
-                  </button>
+                  </DashedButton>
               )}
             </div>
           </div>

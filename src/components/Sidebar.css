@@ -249,27 +249,6 @@
   margin-top: 4px;
 }
 
-.btn-create-inline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  width: 100%;
-  background: none;
-  border: 1px dashed var(--border);
-  border-radius: 6px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: 12px;
-  font-family: inherit;
-  transition: all 0.15s;
-}
-
-.btn-create-inline:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
 .sidebar-separator {
   border-top: 1px solid var(--border);
   margin: 12px 0;
@@ -342,7 +321,7 @@
   padding: 4px 6px;
   border-radius: 4px;
   border: 1px solid var(--border);
-  background: var(--input-bg);
+  background: var(--card-bg);
   color: var(--text-primary);
   font-size: 13px;
   width: 100%;
@@ -351,6 +330,45 @@
 
 .board-name-input:focus {
   border-color: var(--accent);
+}
+
+/* The editor grows out of the row and folds back in, matching the task
+   cards' hover expansion. */
+.board-editor-well {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.2s ease, opacity 0.15s ease;
+}
+
+.board-editor-well.open {
+  max-height: 640px;
+  opacity: 1;
+  /* The well mounts already open, so the expand needs a keyframe to have a
+     starting frame; the collapse rides the transition when .open drops off. */
+  animation: editor-well-open 0.2s ease;
+}
+
+@keyframes editor-well-open {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 640px;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board-editor-well {
+    transition: none;
+  }
+  .board-editor-well.open {
+    animation: none;
+  }
 }
 
 .board-edit-content {
@@ -393,7 +411,10 @@
   transition: opacity 0.15s, color 0.15s;
 }
 
-.board-item:hover .board-edit-btn,
+.board-item:hover .board-edit-btn {
+  opacity: 1;
+}
+
 .board-item.editing > .board-dot {
   display: none;
 }
@@ -401,11 +422,8 @@
 .board-edit-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 6px;
   margin-top: 6px;
-}
-
-.board-item.editing .board-edit-btn {
-  opacity: 1;
 }
 
 .board-edit-btn:hover {
@@ -416,28 +434,6 @@
 .new-board-form + .btn-create-project,
 .btn-create-project + .new-board-form {
   margin-top: 6px;
-}
-
-.btn-create-project {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  margin-top: 4px;
-  width: 100%;
-  background: none;
-  border: 1px dashed var(--border);
-  border-radius: 6px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.15s;
-}
-
-.btn-create-project:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--hover);
 }
 
 .new-board-form {
@@ -455,7 +451,7 @@
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: var(--input-bg);
+  background: var(--card-bg);
   color: var(--text-primary);
   font-size: 13px;
   outline: none;
@@ -497,8 +493,14 @@
 .collaborators-section {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
   margin-bottom: 6px;
+}
+
+.sidebar-mini-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 .collaborator-row {

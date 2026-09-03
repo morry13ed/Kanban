@@ -1,0 +1,44 @@
+/* Shared dashed create-affordance, used by DashedButton. */
+
+.btn-create-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  width: 100%;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.btn-create-inline:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-create-project {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  margin-top: 4px;
+  width: 100%;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+
+.btn-create-project:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--hover);
+}

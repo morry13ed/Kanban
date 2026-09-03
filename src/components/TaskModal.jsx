@@ -10,7 +10,6 @@ import {
   TASK_STATUS_OPTIONS,
 } from '../utils/helpers';
 import SegmentedControl from './SegmentedControl';
-import ColorPicker from './ColorPicker';
 import {
   ACCEPTED_TYPES,
   fileToAttachment,
@@ -66,7 +65,6 @@ export default function TaskModal({
   defaultColumnId,
   members = [],
   memberColorOf = () => undefined,
-  onMemberColorChange,
   onSave,
   onClose,
 }) {
@@ -87,22 +85,20 @@ export default function TaskModal({
   const [attachError, setAttachError] = useState('');
   const [preview, setPreview] = useState(null);
   const [assigneeMenuOpen, setAssigneeMenuOpen] = useState(false);
-  const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const assigneeRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Both assignee popovers dismiss on a click anywhere else.
+  // The assignee menu dismisses on a click anywhere else.
   useEffect(() => {
-    if (!assigneeMenuOpen && !colorPickerOpen) return;
+    if (!assigneeMenuOpen) return;
     const onPointerDown = (e) => {
       if (assigneeRef.current && !assigneeRef.current.contains(e.target)) {
         setAssigneeMenuOpen(false);
-        setColorPickerOpen(false);
       }
     };
     document.addEventListener('mousedown', onPointerDown);
     return () => document.removeEventListener('mousedown', onPointerDown);
-  }, [assigneeMenuOpen, colorPickerOpen]);
+  }, [assigneeMenuOpen]);
 
   useEffect(() => {
     if (!preview) return;
@@ -304,27 +300,11 @@ export default function TaskModal({
                   type="button"
                   id="task-assignee"
                   className="assignee-select"
-                  onClick={() => {
-                    setColorPickerOpen(false);
-                    setAssigneeMenuOpen((open) => !open);
-                  }}
+                  onClick={() => setAssigneeMenuOpen((open) => !open)}
                 >
                   <span className="assignee-select-value">{assignee}</span>
                   <ChevronIcon />
                 </button>
-
-                {assignee !== 'Unassigned' && (
-                  <button
-                    type="button"
-                    className="assignee-color-dot"
-                    style={{ backgroundColor: memberColorOf(assignee) }}
-                    title={`Colour for ${assignee}`}
-                    onClick={() => {
-                      setAssigneeMenuOpen(false);
-                      setColorPickerOpen((open) => !open);
-                    }}
-                  />
-                )}
 
                 {assigneeMenuOpen && (
                   <div className="assignee-menu">
@@ -355,16 +335,6 @@ export default function TaskModal({
                   </div>
                 )}
 
-                {colorPickerOpen && (
-                  <ColorPicker
-                    value={memberColorOf(assignee)}
-                    onApply={(hex) => {
-                      onMemberColorChange?.(assignee, hex);
-                      setColorPickerOpen(false);
-                    }}
-                    onClose={() => setColorPickerOpen(false)}
-                  />
-                )}
               </div>
             </div>
 
