@@ -70,7 +70,8 @@
   color: var(--accent);
 }
 
-.hue-slider {
+.hue-slider,
+.lightness-slider {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
@@ -90,7 +91,8 @@
   );
 }
 
-.hue-slider::-webkit-slider-thumb {
+.hue-slider::-webkit-slider-thumb,
+.lightness-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 14px;
@@ -100,7 +102,8 @@
   border: 2px solid rgba(0, 0, 0, 0.25);
 }
 
-.hue-slider::-moz-range-thumb {
+.hue-slider::-moz-range-thumb,
+.lightness-slider::-moz-range-thumb {
   width: 12px;
   height: 12px;
   border-radius: 50%;

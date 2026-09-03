@@ -324,6 +324,15 @@ export function hslToHex(h, s, l) {
   return `#${f(0)}${f(8)}${f(4)}`;
 }
 
+// Lightness of a hex colour (0-100), for the brightness slider.
+export function hexLightness(hex) {
+  if (!isValidHex(hex)) return 52;
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  return Math.round(((Math.max(r, g, b) + Math.min(r, g, b)) / 2) * 100);
+}
+
 // Hue of a hex colour, for positioning the slider when a hex is typed.
 export function hexHue(hex) {
   if (!isValidHex(hex)) return 220;
