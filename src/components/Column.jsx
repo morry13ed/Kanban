@@ -189,7 +189,9 @@ export default function Column({
   return (
     <div
       data-column-id={column.id}
-      className={`column ${dragOver ? 'drag-over' : ''}`}
+      className={`column ${dragOver ? 'drag-over' : ''} ${
+        editing ? 'editing' : ''
+      }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -197,16 +199,26 @@ export default function Column({
       <div className={`column-header ${editing ? 'editing' : ''}`}>
         {editing ? (
           <div className="column-edit" ref={editRef}>
-            <input
-              type="text"
-              value={columnName}
-              onChange={(e) => setColumnName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleRename();
-              }}
-              autoFocus
-              className="column-name-input"
-            />
+            <div className="column-edit-name">
+              <input
+                type="text"
+                value={columnName}
+                onChange={(e) => setColumnName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleRename();
+                }}
+                autoFocus
+                className="column-name-input"
+              />
+              <button
+                type="button"
+                className="column-edit-confirm"
+                title="Done"
+                onClick={handleRename}
+              >
+                ✓
+              </button>
+            </div>
             <SegmentedControl
               small
               options={COLUMN_TYPES}
