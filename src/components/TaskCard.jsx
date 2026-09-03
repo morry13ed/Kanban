@@ -243,13 +243,6 @@ export default function TaskCard({
             {task.title}
           </h4>
         )}
-      </div>
-
-      {task.description && (
-        <p className="task-description">{task.description}</p>
-      )}
-
-      <div className="task-meta">
         {(status === STATUS_ACTIVE || status === STATUS_PAUSED) && (
           <button
             type="button"
@@ -264,6 +257,13 @@ export default function TaskCard({
             {status === STATUS_ACTIVE ? <PlayIcon /> : <PauseIcon />}
           </button>
         )}
+      </div>
+
+      {task.description && (
+        <p className="task-description">{task.description}</p>
+      )}
+
+      <div className="task-meta">
         {task.isBug && (
           <span className="task-bug" title="Bug">
             <BugIcon />

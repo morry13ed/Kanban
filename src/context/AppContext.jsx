@@ -20,7 +20,9 @@ import {
   DEFAULT_SORT,
   DEFAULT_COLUMN_TYPE,
   STATUS_NONE,
+  STATUS_ACTIVE,
   isSuccessColumn,
+  isActiveColumn,
   normalizeState,
 } from '../utils/helpers';
 
@@ -42,6 +44,18 @@ const defaultState = {
   theme: 'dark',
   filter: 'All',
 };
+
+// Status side effects of a task changing column. Landing in an active column
+// marks it active; landing in a success column, or leaving an active column
+// for a regular one, turns the status off. A move between regular columns
+// leaves a manually set status alone.
+function statusOnTransfer(sourceColumn, targetColumn) {
+  if (isActiveColumn(targetColumn)) return { status: STATUS_ACTIVE };
+  if (isSuccessColumn(targetColumn) || isActiveColumn(sourceColumn)) {
+    return { status: STATUS_NONE };
+  }
+  return {};
+}
 
 function reducer(state, action) {
   switch (action.type) {
@@ -277,11 +291,7 @@ function reducer(state, action) {
         ...state,
         boards: state.boards.map((b) => {
           if (b.id !== boardId) return b;
-          // Landing in a success column means the work is finished, so the
-          // active/paused hint comes off.
-          const done = isSuccessColumn(
-            b.columns.find((c) => c.id === targetColumnId)
-          );
+          const target = b.columns.find((c) => c.id === targetColumnId);
           return {
             ...b,
             tasks: b.tasks.map((t) =>
@@ -290,9 +300,14 @@ function reducer(state, action) {
                     ...t,
                     columnId: targetColumnId,
                     ...(t.columnId !== targetColumnId
-                      ? { movedAt: new Date().toISOString() }
+                      ? {
+                          movedAt: new Date().toISOString(),
+                          ...statusOnTransfer(
+                            b.columns.find((c) => c.id === t.columnId),
+                            target
+                          ),
+                        }
                       : {}),
-                    ...(done ? { status: STATUS_NONE } : {}),
                   }
                 : t
             ),
@@ -315,16 +330,18 @@ function reducer(state, action) {
           if (!moving) return b;
 
           const rest = b.tasks.filter((t) => t.id !== taskId);
-          const done = isSuccessColumn(
-            b.columns.find((c) => c.id === targetColumnId)
-          );
           const moved = {
             ...moving,
             columnId: targetColumnId,
             ...(moving.columnId !== targetColumnId
-              ? { movedAt: new Date().toISOString() }
+              ? {
+                  movedAt: new Date().toISOString(),
+                  ...statusOnTransfer(
+                    b.columns.find((c) => c.id === moving.columnId),
+                    b.columns.find((c) => c.id === targetColumnId)
+                  ),
+                }
               : {}),
-            ...(done ? { status: STATUS_NONE } : {}),
           };
           const at = beforeTaskId
             ? rest.findIndex((t) => t.id === beforeTaskId)

@@ -121,6 +121,7 @@ export const SORT_OPTIONS = [
 export const DEFAULT_SORT = 'manual';
 
 export const COLUMN_REGULAR = 'regular';
+export const COLUMN_ACTIVE = 'active';
 export const COLUMN_SUCCESS = 'success';
 export const DEFAULT_COLUMN_TYPE = COLUMN_REGULAR;
 
@@ -131,11 +132,20 @@ export const COLUMN_TYPES = [
     hint: 'Nothing special happens when a task lands here.',
   },
   {
+    value: COLUMN_ACTIVE,
+    label: 'Active',
+    hint: 'Tasks moved into this column are marked active automatically.',
+  },
+  {
     value: COLUMN_SUCCESS,
     label: 'Success',
     hint: 'Tasks moved into this column set off confetti.',
   },
 ];
+
+export function isActiveColumn(column) {
+  return column?.type === COLUMN_ACTIVE;
+}
 
 export function isSuccessColumn(column) {
   return column?.type === COLUMN_SUCCESS;

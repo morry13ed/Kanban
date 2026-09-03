@@ -290,6 +290,7 @@ export default function Board() {
               />
               <div className="add-column-footer">
                 <SegmentedControl
+                  small
                   options={COLUMN_TYPES}
                   value={newColumnType}
                   onChange={setNewColumnType}
