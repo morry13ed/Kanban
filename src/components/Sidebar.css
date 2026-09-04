@@ -647,6 +647,40 @@
   }
 }
 
+.account-row {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 2px 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.account-email {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-signout {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.account-signout:hover {
+  color: var(--danger);
+}
+
 .sidebar-action {
   flex: 1;
   padding: 6px 8px;

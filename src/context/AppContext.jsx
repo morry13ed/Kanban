@@ -6,13 +6,17 @@ import {
   useState,
   useRef,
 } from 'react';
+import { loadState, saveState } from '../utils/storage';
 import {
-  loadState,
-  saveState,
-  loadRemoteState,
-  saveRemoteState,
   isRemoteEnabled,
-} from '../utils/storage';
+  fetchWorkspace,
+  pushBoard,
+  deleteBoardRemote,
+  pushUserState,
+  reconcileMembers,
+  subscribeBoards,
+} from '../utils/sync';
+import { useAuth } from './AuthContext';
 import {
   createBoard,
   createTask,
@@ -393,6 +397,29 @@ function reducer(state, action) {
       };
     }
 
+    // ── Remote echoes (realtime) ──
+    case 'UPSERT_BOARD_REMOTE': {
+      const board = action.payload;
+      const exists = state.boards.some((b) => b.id === board.id);
+      return {
+        ...state,
+        boards: exists
+          ? state.boards.map((b) => (b.id === board.id ? board : b))
+          : [...state.boards, board],
+      };
+    }
+    case 'REMOVE_BOARD_REMOTE': {
+      const boards = state.boards.filter((b) => b.id !== action.payload);
+      return {
+        ...state,
+        boards,
+        activeBoardId:
+          state.activeBoardId === action.payload
+            ? boards[0]?.id ?? null
+            : state.activeBoardId,
+      };
+    }
+
     // ── Import ──
     // Used by both file import and the remote sync. Theme and filter are
     // per-device, and the board you're currently looking at is kept selected
@@ -424,64 +451,192 @@ export function AppProvider({ children }) {
     return saved ? { ...initial, ...saved } : initial;
   });
 
-  // Blocks remote writes until the first remote read has finished, so a fresh
-  // browser can't upload its empty state over what's already stored.
-  const [hydrated, setHydrated] = useState(false);
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+
+  // Blocks remote writes until the first workspace load has finished, so a
+  // fresh browser can't push emptiness over what's already stored.
+  const [hydrated, setHydrated] = useState(() => !isRemoteEnabled());
   const [syncStatus, setSyncStatus] = useState(
     isRemoteEnabled() ? 'saving' : SYNC_OFF
   );
 
-  // Read inside the one-shot hydration effect without re-running it.
+  // Read inside effects without re-running them on every keystroke.
   const stateRef = useRef(state);
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
 
+  // Previous board objects by id, for the per-board diff push.
+  const knownBoardsRef = useRef(new Map());
+  const boardTimersRef = useRef(new Map());
+
   useEffect(() => {
     saveState(state);
   }, [state]);
 
+  // ── Initial load + one-time migration of local boards ──
   useEffect(() => {
+    if (!isRemoteEnabled() || !userId) return;
+
     let mounted = true;
+
     (async () => {
-      const { state: remote, error } = await loadRemoteState();
+      setHydrated(false);
+      setSyncStatus('saving');
+      const { rows, userState, error } = await fetchWorkspace();
       if (!mounted) return;
-
-      // If an empty browser reached the table first it will have stored an
-      // empty state. Don't let that come back and wipe boards we already have
-      // locally — the next save pushes the local ones up instead.
-      const remoteIsEmpty = !remote?.boards?.length;
-      const haveLocalBoards = stateRef.current.boards.length > 0;
-
-      if (remote && !(remoteIsEmpty && haveLocalBoards)) {
-        dispatch({ type: 'IMPORT_STATE', payload: remote });
+      if (error) {
+        setSyncStatus('error');
+        setHydrated(true);
+        return;
       }
+
+      const local = stateRef.current;
+      const remoteIds = new Set(rows.map((r) => r.id));
+
+      // Boards this browser has that the server doesn't: first login after
+      // using the app locally. Push them up under this account.
+      const toMigrate = local.boards.filter((b) => !remoteIds.has(b.id));
+      for (const board of toMigrate) {
+        await pushBoard(userId, board);
+        await reconcileMembers(board);
+      }
+
+      const boards = [...rows.map((r) => r.data), ...toMigrate];
+
+      // Sidebar organisation: the server copy wins; otherwise this browser's
+      // local one seeds it.
+      const org = userState ?? {
+        projects: local.projects,
+        groups: local.groups,
+        activeBoardId: local.activeBoardId,
+      };
+
+      // Boards shared by someone else reference their projects, not ours -
+      // give them a home.
+      const projects = [...(org.projects || [])];
+      const projectIds = new Set(projects.map((p) => p.id));
+      let sharedProject = projects.find((p) => p.name === 'Shared');
+      const homeless = boards.filter((b) => !projectIds.has(b.projectId));
+      const adopted = boards.map((b) => {
+        if (projectIds.has(b.projectId)) return b;
+        if (!sharedProject) {
+          sharedProject = { id: 'shared-with-me', name: 'Shared' };
+          projects.push(sharedProject);
+        }
+        return { ...b, projectId: sharedProject.id, groupId: null };
+      });
+
+      dispatch({
+        type: 'IMPORT_STATE',
+        payload: {
+          projects,
+          groups: org.groups || [],
+          boards: adopted,
+          activeBoardId: org.activeBoardId ?? adopted[0]?.id ?? null,
+        },
+      });
+
+      if (!userState || homeless.length > 0) {
+        await pushUserState(userId, {
+          projects,
+          groups: org.groups || [],
+          activeBoardId: org.activeBoardId ?? adopted[0]?.id ?? null,
+        });
+      }
+
+      // Seed the diff baseline so hydration itself doesn't push everything.
+      knownBoardsRef.current = new Map(adopted.map((b) => [b.id, b]));
+      setSyncStatus('synced');
       setHydrated(true);
-      if (isRemoteEnabled()) {
-        setSyncStatus(error ? 'error' : 'synced');
-      }
     })();
+
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [userId]);
 
+  // ── Per-board debounced writes, plus deletions ──
   useEffect(() => {
-    if (!hydrated || !isRemoteEnabled()) return;
+    if (!hydrated || !isRemoteEnabled() || !userId) return;
 
-    // Coalesce bursts of edits into a single write.
-    let current = true;
-    const timer = setTimeout(async () => {
-      setSyncStatus('saving');
-      const { error } = await saveRemoteState(state);
-      if (current) setSyncStatus(error ? 'error' : 'synced');
+    const known = knownBoardsRef.current;
+    const timers = boardTimersRef.current;
+    const currentIds = new Set(state.boards.map((b) => b.id));
+
+    for (const board of state.boards) {
+      if (known.get(board.id) === board) continue;
+      known.set(board.id, board);
+
+      clearTimeout(timers.get(board.id));
+      timers.set(
+        board.id,
+        setTimeout(async () => {
+          timers.delete(board.id);
+          setSyncStatus('saving');
+          const pushed = await pushBoard(userId, board);
+          const members = await reconcileMembers(board);
+          setSyncStatus(pushed.error || members.error ? 'error' : 'synced');
+        }, REMOTE_SAVE_DELAY)
+      );
+    }
+
+    for (const id of [...known.keys()]) {
+      if (currentIds.has(id)) continue;
+      known.delete(id);
+      clearTimeout(timers.get(id));
+      timers.delete(id);
+      deleteBoardRemote(id);
+    }
+  }, [state.boards, hydrated, userId]);
+
+  // ── Debounced sidebar-organisation writes ──
+  useEffect(() => {
+    if (!hydrated || !isRemoteEnabled() || !userId) return;
+    const timer = setTimeout(() => {
+      pushUserState(userId, stateRef.current);
     }, REMOTE_SAVE_DELAY);
+    return () => clearTimeout(timer);
+  }, [state.projects, state.groups, state.activeBoardId, hydrated, userId]);
 
-    return () => {
-      current = false;
-      clearTimeout(timer);
-    };
-  }, [state, hydrated]);
+  // ── Realtime: other people's board changes appear live ──
+  useEffect(() => {
+    if (!hydrated || !isRemoteEnabled() || !userId) return;
+
+    const unsubscribe = subscribeBoards((payload) => {
+      if (payload.eventType === 'DELETE') {
+        const gone = payload.old?.id;
+        if (gone && knownBoardsRef.current.has(gone)) {
+          knownBoardsRef.current.delete(gone);
+          dispatch({ type: 'REMOVE_BOARD_REMOTE', payload: gone });
+        }
+        return;
+      }
+
+      const row = payload.new;
+      if (!row?.data) return;
+      // Our own write echoing back - and same-account echoes from another
+      // tab would fight the debounce, so let reloads handle those.
+      if (row.updated_by === userId) return;
+
+      const current = stateRef.current.boards.find((b) => b.id === row.id);
+      if (current && JSON.stringify(current) === JSON.stringify(row.data)) {
+        return;
+      }
+
+      // A board shared with us mid-session references the sharer's project;
+      // keep whatever placement we already gave it, or park it in Shared.
+      const placed = current
+        ? { ...row.data, projectId: current.projectId, groupId: current.groupId }
+        : row.data;
+
+      knownBoardsRef.current.set(row.id, placed);
+      dispatch({ type: 'UPSERT_BOARD_REMOTE', payload: placed });
+    });
+
+    return unsubscribe;
+  }, [hydrated, userId]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', state.theme);

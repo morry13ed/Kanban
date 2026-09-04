@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { exportState, importState } from '../utils/storage';
 import {
   BOARD_COLORS,
@@ -31,6 +32,7 @@ const SHOW_GROUPS = false;
 
 export default function Sidebar() {
   const { state, dispatch, syncStatus } = useApp();
+  const { enabled: authEnabled, user, signOut } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
   // What is being created right now, and where:
@@ -770,6 +772,21 @@ export default function Sidebar() {
               <span className="sync-dot" />
               {SYNC_LABELS[syncStatus].text}
             </div>
+
+            {authEnabled && user && (
+              <div className="account-row">
+                <span className="account-email" title={user.email}>
+                  {user.email}
+                </span>
+                <button
+                  type="button"
+                  className="account-signout"
+                  onClick={signOut}
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
 
             <button className="sidebar-action" onClick={handleExport} title="Export data">
               ↓ Export

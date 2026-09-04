@@ -1,7 +1,4 @@
-import { supabase } from '../lib/supabaseClient';
-
 const STORAGE_KEY = 'kanban-app-state';
-const REMOTE_STATE_ID = 'default';
 
 export function loadState() {
   try {
@@ -13,64 +10,20 @@ export function loadState() {
   }
 }
 
+export function clearLocalState() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // nothing to clear
+  }
+}
+
 export function saveState(state) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (e) {
     console.error('Failed to save state:', e);
   }
-}
-
-// Both remote calls report failure rather than swallowing it, so the UI can
-// tell "nothing saved there yet" apart from "the save didn't work".
-export async function loadRemoteState() {
-  if (!supabase) return { state: null, error: null };
-
-  const { data, error } = await supabase
-    .from('app_state')
-    .select('state')
-    .eq('id', REMOTE_STATE_ID)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Failed to load remote state:', error);
-    return { state: null, error };
-  }
-
-  return { state: data?.state ?? null, error: null };
-}
-
-// Only the data worth carrying between devices. Theme and filter are
-// per-device UI preferences and stay in localStorage.
-function toSharedState(state) {
-  return {
-    projects: state.projects || [],
-    groups: state.groups || [],
-    boards: state.boards,
-    activeBoardId: state.activeBoardId,
-  };
-}
-
-export async function saveRemoteState(state) {
-  if (!supabase) return { error: null };
-
-  const { error } = await supabase.from('app_state').upsert(
-    {
-      id: REMOTE_STATE_ID,
-      state: toSharedState(state),
-    },
-    { onConflict: 'id' }
-  );
-
-  if (error) {
-    console.error('Failed to save remote state:', error);
-  }
-
-  return { error: error ?? null };
-}
-
-export function isRemoteEnabled() {
-  return Boolean(supabase);
 }
 
 export function exportState(state) {
