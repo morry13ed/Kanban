@@ -7,10 +7,8 @@ import {
   roundLevel,
   formatLevel,
   STATUS_NONE,
-  TASK_STATUS_OPTIONS,
   isActiveColumn,
 } from '../utils/helpers';
-import SegmentedControl from './SegmentedControl';
 import {
   ACCEPTED_TYPES,
   fileToAttachment,
@@ -85,7 +83,8 @@ export default function TaskModal({
   const [demand, setDemand] = useState(task?.demand ?? LEVEL_MIN);
   const [isBug, setIsBug] = useState(task?.isBug ?? false);
   const [isFeature, setIsFeature] = useState(task?.isFeature ?? false);
-  const [status, setStatus] = useState(task?.status ?? STATUS_NONE);
+  // Status is set by column transfers (and the card chip), not edited here.
+  const status = task?.status ?? STATUS_NONE;
   const [completion, setCompletion] = useState(task?.completion ?? 0);
   const [attachments, setAttachments] = useState(task?.attachments ?? []);
   const [attachError, setAttachError] = useState('');
@@ -436,17 +435,6 @@ export default function TaskModal({
             </div>
           )}
 
-          {inActiveColumn && (
-            <div className="form-status">
-              <span className="form-status-label">Active</span>
-              <SegmentedControl
-                small
-                options={TASK_STATUS_OPTIONS}
-                value={status}
-                onChange={setStatus}
-              />
-            </div>
-          )}
 
           {preview && (
             <div className="lightbox" onClick={() => setPreview(null)}>
