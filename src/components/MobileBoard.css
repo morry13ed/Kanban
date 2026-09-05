@@ -19,9 +19,13 @@
   margin-left: auto;
 }
 
-.mboard-addcol-btn svg {
-  width: 16px;
-  height: 16px;
+.mboard-addcol-btn {
+  font-size: 18px;
+}
+
+.mboard-menu-sep {
+  border-top: 1px solid var(--border);
+  margin: 4px 6px;
 }
 
 .mboard-addcol-menu {

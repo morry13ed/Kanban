@@ -26,7 +26,7 @@ import './MobileBoard.css';
 
 // One column at a time, switched by tabs - the phone replacement for
 // dragging between columns. Tasks move through a tap sheet instead.
-export default function MobileBoard({ onOpenMenu }) {
+export default function MobileBoard({ onOpenMenu, onEditBoard }) {
   const { state, dispatch } = useApp();
 
   const [rawColumnId, setRawColumnId] = useState(null);
@@ -166,22 +166,44 @@ export default function MobileBoard({ onOpenMenu }) {
         <button
           type="button"
           className="mboard-menu-btn mboard-addcol-btn"
-          title="Add column"
-          onClick={() => setOpenMenu(openMenu === 'addcol' ? null : 'addcol')}
+          title="Board options"
+          onClick={() => setOpenMenu(openMenu === 'top' ? null : 'top')}
         >
-          <svg
-            viewBox="0 0 16 16"
-            aria-hidden="true"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          >
-            <rect x="1.5" y="2.5" width="4" height="11" rx="1.2" />
-            <rect x="7.5" y="2.5" width="4" height="7" rx="1.2" />
-            <path d="M14 9.5v4M12 11.5h4" />
-          </svg>
+          ⋮
         </button>
+
+        {openMenu === 'top' && (
+          <div className="mboard-menu mboard-addcol-menu">
+            <button
+              type="button"
+              className="mboard-menu-item"
+              onClick={() => setOpenMenu('addcol')}
+            >
+              Add column
+            </button>
+            <button
+              type="button"
+              className="mboard-menu-item"
+              onClick={() => {
+                setOpenMenu(null);
+                onEditBoard?.(board.id);
+              }}
+            >
+              Edit board & sharing
+            </button>
+            <div className="mboard-menu-sep" />
+            <button
+              type="button"
+              className="mboard-menu-item danger"
+              onClick={() => {
+                setOpenMenu(null);
+                setConfirm('board');
+              }}
+            >
+              Delete board
+            </button>
+          </div>
+        )}
 
         {openMenu === 'addcol' && (
           <div className="mboard-menu mboard-addcol-menu">
@@ -245,17 +267,6 @@ export default function MobileBoard({ onOpenMenu }) {
             onClick={() => setOpenMenu(openMenu === 'sort' ? null : 'sort')}
           >
             ⇅
-          </button>
-          <button
-            type="button"
-            className="mboard-tool-btn"
-            title="Add task"
-            onClick={() => {
-              setEditingTask(null);
-              setShowTaskModal(true);
-            }}
-          >
-            +
           </button>
           <button
             type="button"
@@ -332,16 +343,6 @@ export default function MobileBoard({ onOpenMenu }) {
               }}
             >
               Delete column
-            </button>
-            <button
-              type="button"
-              className="mboard-menu-item danger"
-              onClick={() => {
-                setOpenMenu(null);
-                setConfirm('board');
-              }}
-            >
-              Delete board
             </button>
           </div>
         )}

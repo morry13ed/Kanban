@@ -698,3 +698,11 @@
   background: var(--hover);
   color: var(--text-primary);
 }
+
+/* No hover on touch screens - the edit affordances stay visible. */
+@media (hover: none) {
+  .board-edit-btn,
+  .project-edit-btn {
+    opacity: 1;
+  }
+}
