@@ -213,25 +213,6 @@
   color: var(--danger);
 }
 
-.mboard-addcol {
-  display: flex;
-  gap: 6px;
-  padding: 6px;
-}
-
-.mboard-addcol input {
-  flex: 1;
-  min-width: 0;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--input-bg);
-  color: var(--text-primary);
-  font-size: 14px;
-  font-family: inherit;
-  outline: none;
-}
-
 /* ── Task list ── */
 .mboard-tasks {
   list-style: none;

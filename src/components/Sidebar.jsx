@@ -30,7 +30,7 @@ const SYNC_LABELS = {
 // their project so nothing disappears.
 const SHOW_GROUPS = false;
 
-export default function Sidebar({ editRequest }) {
+export default function Sidebar() {
   const { state, dispatch, syncStatus } = useApp();
   const { enabled: authEnabled, user, signOut } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
@@ -56,12 +56,6 @@ export default function Sidebar({ editRequest }) {
   const [editingBoardColor, setEditingBoardColor] = useState(BOARD_COLORS[0]);
   const [editingBoardCollaborators, setEditingBoardCollaborators] = useState([]);
   const fileInputRef = useRef(null);
-
-  const stateRefBoards = useRef(state.boards);
-  useEffect(() => {
-    stateRefBoards.current = state.boards;
-  }, [state.boards]);
-  const startEditingBoardRef = useRef(() => {});
 
   // Which tiny colour picker is open:
   //   { target: 'new-collab' | 'edit-collab', index }
@@ -218,20 +212,6 @@ export default function Sidebar({ editRequest }) {
     e.target.value = '';
   };
 
-  // The mobile top menu can ask for a board's editor to be open when the
-  // drawer appears. Deferred a tick so it counts as an event, not a render
-  // side effect.
-  useEffect(() => {
-    if (!editRequest) return;
-    const timer = setTimeout(() => {
-      const board = stateRefBoards.current.find(
-        (b) => b.id === editRequest.boardId
-      );
-      if (board) startEditingBoardRef.current(board);
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [editRequest]);
-
   const startEditingBoard = (board) => {
     setEditingBoardId(board.id);
     setEditingBoardName(board.name);
@@ -256,10 +236,6 @@ export default function Sidebar({ editRequest }) {
   const cancelEditingBoard = () => {
     if (editingBoardId) beginCloseEditor(editingBoardId);
   };
-
-  useEffect(() => {
-    startEditingBoardRef.current = startEditingBoard;
-  });
 
   const saveEditingBoard = (board) => {
     if (!editingBoardId) return;

@@ -11,7 +11,6 @@ function App() {
   const { enabled, ready, user } = useAuth();
   const isMobile = useIsMobile();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [editRequest, setEditRequest] = useState(null);
 
   // Cloud configured but nobody signed in: the gate. Without Supabase
   // configured the app stays a local, single-browser tool as before.
@@ -21,13 +20,7 @@ function App() {
   if (isMobile) {
     return (
       <div className="mobile-app">
-        <MobileBoard
-          onOpenMenu={() => setDrawerOpen(true)}
-          onEditBoard={(boardId) => {
-            setEditRequest({ boardId, token: Date.now() });
-            setDrawerOpen(true);
-          }}
-        />
+        <MobileBoard onOpenMenu={() => setDrawerOpen(true)} />
 
         {drawerOpen && (
           <div className="drawer-overlay" onClick={() => setDrawerOpen(false)}>
@@ -47,7 +40,7 @@ function App() {
                 }
               }}
             >
-              <Sidebar editRequest={editRequest} />
+              <Sidebar />
             </div>
           </div>
         )}

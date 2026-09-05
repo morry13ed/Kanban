@@ -1,0 +1,12 @@
+/* Rides on the modal and sidebar form styles, both global. Only the bits
+   specific to this dialog live here. */
+.modal .collaborators-section {
+  margin-bottom: 0;
+}
+
+.modal .board-color-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}

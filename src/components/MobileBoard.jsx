@@ -4,6 +4,8 @@ import {
   sortTasks,
   SORT_OPTIONS,
   DEFAULT_SORT,
+  DEFAULT_COLUMN_TYPE,
+  COLUMN_TYPES,
   isSuccessColumn,
   getPriority,
   getMemberColor,
@@ -14,6 +16,8 @@ import {
 import { fireConfetti } from '../utils/confetti';
 import TaskModal from './TaskModal';
 import ConfirmDialog from './ConfirmDialog';
+import BoardEditModal from './BoardEditModal';
+import SegmentedControl from './SegmentedControl';
 import {
   BugIcon,
   PlayIcon,
@@ -26,7 +30,7 @@ import './MobileBoard.css';
 
 // One column at a time, switched by tabs - the phone replacement for
 // dragging between columns. Tasks move through a tap sheet instead.
-export default function MobileBoard({ onOpenMenu, onEditBoard }) {
+export default function MobileBoard({ onOpenMenu }) {
   const { state, dispatch } = useApp();
 
   const [rawColumnId, setRawColumnId] = useState(null);
@@ -36,6 +40,9 @@ export default function MobileBoard({ onOpenMenu, onEditBoard }) {
   const [editingTask, setEditingTask] = useState(null);
   const [confirm, setConfirm] = useState(null); // 'column' | 'board'
   const [newColumnName, setNewColumnName] = useState('');
+  const [newColumnType, setNewColumnType] = useState(DEFAULT_COLUMN_TYPE);
+  const [showColumnModal, setShowColumnModal] = useState(false);
+  const [showBoardModal, setShowBoardModal] = useState(false);
   const menusRef = useRef(null);
   const topbarRef = useRef(null);
 
@@ -138,9 +145,13 @@ export default function MobileBoard({ onOpenMenu, onEditBoard }) {
   const addColumn = () => {
     const name = newColumnName.trim();
     if (!name) return;
-    dispatch({ type: 'ADD_COLUMN', payload: { boardId: board.id, name } });
+    dispatch({
+      type: 'ADD_COLUMN',
+      payload: { boardId: board.id, name, type: newColumnType },
+    });
     setNewColumnName('');
-    setOpenMenu(null);
+    setNewColumnType(DEFAULT_COLUMN_TYPE);
+    setShowColumnModal(false);
   };
 
   const formatDate = (str) =>
@@ -177,7 +188,10 @@ export default function MobileBoard({ onOpenMenu, onEditBoard }) {
             <button
               type="button"
               className="mboard-menu-item"
-              onClick={() => setOpenMenu('addcol')}
+              onClick={() => {
+                setOpenMenu(null);
+                setShowColumnModal(true);
+              }}
             >
               Add column
             </button>
@@ -186,7 +200,7 @@ export default function MobileBoard({ onOpenMenu, onEditBoard }) {
               className="mboard-menu-item"
               onClick={() => {
                 setOpenMenu(null);
-                onEditBoard?.(board.id);
+                setShowBoardModal(true);
               }}
             >
               Edit board & sharing
@@ -205,30 +219,6 @@ export default function MobileBoard({ onOpenMenu, onEditBoard }) {
           </div>
         )}
 
-        {openMenu === 'addcol' && (
-          <div className="mboard-menu mboard-addcol-menu">
-            <div className="mboard-addcol">
-              <input
-                type="text"
-                placeholder="Column name..."
-                value={newColumnName}
-                onChange={(e) => setNewColumnName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') addColumn();
-                  if (e.key === 'Escape') setOpenMenu(null);
-                }}
-                autoFocus
-              />
-              <button
-                type="button"
-                className="btn btn-sm btn-primary"
-                onClick={addColumn}
-              >
-                Add
-              </button>
-            </div>
-          </div>
-        )}
       </header>
 
       <div className="mboard-tabs">
@@ -497,6 +487,71 @@ export default function MobileBoard({ onOpenMenu, onEditBoard }) {
             setEditingTask(null);
           }}
         />
+      )}
+
+      {showColumnModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowColumnModal(false)}
+        >
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Add column</h3>
+              <button
+                className="modal-close"
+                onClick={() => setShowColumnModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-form">
+              <div className="form-group">
+                <label htmlFor="new-column-name">Column name</label>
+                <input
+                  id="new-column-name"
+                  type="text"
+                  placeholder="Column name..."
+                  value={newColumnName}
+                  onChange={(e) => setNewColumnName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') addColumn();
+                    if (e.key === 'Escape') setShowColumnModal(false);
+                  }}
+                  autoFocus
+                />
+              </div>
+              <div className="form-status">
+                <span className="form-status-label">Type</span>
+                <SegmentedControl
+                  small
+                  options={COLUMN_TYPES}
+                  value={newColumnType}
+                  onChange={setNewColumnType}
+                />
+              </div>
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setShowColumnModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={addColumn}
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBoardModal && (
+        <BoardEditModal board={board} onClose={() => setShowBoardModal(false)} />
       )}
 
       {confirm === 'column' && activeColumn && (
