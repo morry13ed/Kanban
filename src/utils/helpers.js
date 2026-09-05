@@ -17,7 +17,7 @@ export function createBoard(name, color = '#3b82f6', members = []) {
   };
 }
 
-export const LEVEL_MIN = 1;
+export const LEVEL_MIN = 0;
 export const LEVEL_MAX = 5;
 export const LEVEL_DEFAULT = 3;
 
@@ -70,30 +70,24 @@ function clampLevel(value) {
   return Math.min(LEVEL_MAX, Math.max(LEVEL_MIN, n));
 }
 
-export const DEMAND_WEIGHT = 0.5;
-export const IMPACT_WEIGHT = 0.3;
-export const TIME_WEIGHT = 0.2;
+export const IMPACT_WEIGHT = 0.6;
+export const TIME_WEIGHT = 0.4;
 
-// Demand (it has to happen) carries double impact's weight, and duration
-// pulls down but can never bury a high-demand task. Scaled to 0-100:
-//   max demand + max impact + short duration = 100
-//   max demand alone, slow and low impact    =  50
-//   no demand, high impact, short duration   =  50
-//   no demand, low impact, long duration     =   0
-// A task predating the demand slider defaults to no demand, so its score
-// re-settles on the new scale without jumping any queue.
+// Impact and duration set the pragmatic base (impact raises it, duration
+// pulls it down). Demand only accelerates: it fills whatever gap is left
+// between that base and 100, so it can never bury a task. Scaled 0-100:
+//   impact 3, duration 3, no demand  ≈  52
+//   same task, max demand            = 100
+//   no demand, max impact, instant   = 100
+//   no demand, no impact, very long  =   0
 export function getPriority(task) {
   const span = LEVEL_MAX - LEVEL_MIN;
   const demand = (clampLevel(task?.demand ?? LEVEL_MIN) - LEVEL_MIN) / span;
   const impact = (clampLevel(task?.impact) - LEVEL_MIN) / span;
   const time = (clampLevel(task?.time) - LEVEL_MIN) / span;
-  const score =
-    DEMAND_WEIGHT * demand +
-    IMPACT_WEIGHT * impact -
-    TIME_WEIGHT * time +
-    TIME_WEIGHT;
+  const base = IMPACT_WEIGHT * impact + TIME_WEIGHT * (1 - time);
 
-  return Math.round(score * 100);
+  return Math.round((base + demand * (1 - base)) * 100);
 }
 
 export const BOARD_COLORS = [
