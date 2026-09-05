@@ -35,17 +35,16 @@ export default function MobileBoard({ onOpenMenu }) {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [confirm, setConfirm] = useState(null); // 'column' | 'board'
-  const [addingColumn, setAddingColumn] = useState(false);
   const [newColumnName, setNewColumnName] = useState('');
   const menusRef = useRef(null);
+  const topbarRef = useRef(null);
 
   useEffect(() => {
     if (!openMenu) return;
     const onDown = (e) => {
-      if (menusRef.current && !menusRef.current.contains(e.target)) {
-        setOpenMenu(null);
-        setAddingColumn(false);
-      }
+      const inToolbar = menusRef.current?.contains(e.target);
+      const inTopbar = topbarRef.current?.contains(e.target);
+      if (!inToolbar && !inTopbar) setOpenMenu(null);
     };
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
@@ -141,7 +140,6 @@ export default function MobileBoard({ onOpenMenu }) {
     if (!name) return;
     dispatch({ type: 'ADD_COLUMN', payload: { boardId: board.id, name } });
     setNewColumnName('');
-    setAddingColumn(false);
     setOpenMenu(null);
   };
 
@@ -157,7 +155,7 @@ export default function MobileBoard({ onOpenMenu }) {
 
   return (
     <div className="mboard">
-      <header className="mboard-topbar">
+      <header className="mboard-topbar" ref={topbarRef}>
         <button type="button" className="mboard-menu-btn" onClick={onOpenMenu}>
           ☰
         </button>
@@ -165,6 +163,50 @@ export default function MobileBoard({ onOpenMenu }) {
           {project ? `${project.name} / ` : ''}
           <strong>{board.name}</strong>
         </span>
+        <button
+          type="button"
+          className="mboard-menu-btn mboard-addcol-btn"
+          title="Add column"
+          onClick={() => setOpenMenu(openMenu === 'addcol' ? null : 'addcol')}
+        >
+          <svg
+            viewBox="0 0 16 16"
+            aria-hidden="true"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          >
+            <rect x="1.5" y="2.5" width="4" height="11" rx="1.2" />
+            <rect x="7.5" y="2.5" width="4" height="7" rx="1.2" />
+            <path d="M14 9.5v4M12 11.5h4" />
+          </svg>
+        </button>
+
+        {openMenu === 'addcol' && (
+          <div className="mboard-menu mboard-addcol-menu">
+            <div className="mboard-addcol">
+              <input
+                type="text"
+                placeholder="Column name..."
+                value={newColumnName}
+                onChange={(e) => setNewColumnName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') addColumn();
+                  if (e.key === 'Escape') setOpenMenu(null);
+                }}
+                autoFocus
+              />
+              <button
+                type="button"
+                className="btn btn-sm btn-primary"
+                onClick={addColumn}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       <div className="mboard-tabs">
@@ -281,36 +323,6 @@ export default function MobileBoard({ onOpenMenu }) {
 
         {openMenu === 'more' && (
           <div className="mboard-menu">
-            {addingColumn ? (
-              <div className="mboard-addcol">
-                <input
-                  type="text"
-                  placeholder="Column name..."
-                  value={newColumnName}
-                  onChange={(e) => setNewColumnName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') addColumn();
-                    if (e.key === 'Escape') setAddingColumn(false);
-                  }}
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  className="btn btn-sm btn-primary"
-                  onClick={addColumn}
-                >
-                  Add
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                className="mboard-menu-item"
-                onClick={() => setAddingColumn(true)}
-              >
-                Add column
-              </button>
-            )}
             <button
               type="button"
               className="mboard-menu-item danger"
