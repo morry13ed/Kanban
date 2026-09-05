@@ -42,6 +42,9 @@ export default function MobileBoard({ onOpenMenu }) {
   const [newColumnName, setNewColumnName] = useState('');
   const [newColumnType, setNewColumnType] = useState(DEFAULT_COLUMN_TYPE);
   const [showColumnModal, setShowColumnModal] = useState(false);
+  const [showEditColumnModal, setShowEditColumnModal] = useState(false);
+  const [editColumnName, setEditColumnName] = useState('');
+  const [editColumnType, setEditColumnType] = useState(DEFAULT_COLUMN_TYPE);
   const [showBoardModal, setShowBoardModal] = useState(false);
   const menusRef = useRef(null);
   const topbarRef = useRef(null);
@@ -140,6 +143,24 @@ export default function MobileBoard({ onOpenMenu }) {
     );
     setShowTaskModal(false);
     setEditingTask(null);
+  };
+
+  const saveColumnEdit = () => {
+    if (!activeColumn) return;
+    const name = editColumnName.trim() || activeColumn.name;
+    dispatch({
+      type: 'RENAME_COLUMN',
+      payload: { boardId: board.id, columnId: activeColumn.id, name },
+    });
+    dispatch({
+      type: 'SET_COLUMN_TYPE',
+      payload: {
+        boardId: board.id,
+        columnId: activeColumn.id,
+        columnType: editColumnType,
+      },
+    });
+    setShowEditColumnModal(false);
   };
 
   const addColumn = () => {
@@ -324,6 +345,20 @@ export default function MobileBoard({ onOpenMenu }) {
 
         {openMenu === 'more' && (
           <div className="mboard-menu">
+            <button
+              type="button"
+              className="mboard-menu-item"
+              onClick={() => {
+                setOpenMenu(null);
+                if (!activeColumn) return;
+                setEditColumnName(activeColumn.name);
+                setEditColumnType(activeColumn.type || DEFAULT_COLUMN_TYPE);
+                setShowEditColumnModal(true);
+              }}
+            >
+              Edit column
+            </button>
+            <div className="mboard-menu-sep" />
             <button
               type="button"
               className="mboard-menu-item danger"
@@ -543,6 +578,66 @@ export default function MobileBoard({ onOpenMenu }) {
                   onClick={addColumn}
                 >
                   Add
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditColumnModal && activeColumn && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowEditColumnModal(false)}
+        >
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Edit column</h3>
+              <button
+                className="modal-close"
+                onClick={() => setShowEditColumnModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-form">
+              <div className="form-group">
+                <label htmlFor="edit-column-name">Column name</label>
+                <input
+                  id="edit-column-name"
+                  type="text"
+                  value={editColumnName}
+                  onChange={(e) => setEditColumnName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') saveColumnEdit();
+                    if (e.key === 'Escape') setShowEditColumnModal(false);
+                  }}
+                  autoFocus
+                />
+              </div>
+              <div className="form-status">
+                <span className="form-status-label">Type</span>
+                <SegmentedControl
+                  small
+                  options={COLUMN_TYPES}
+                  value={editColumnType}
+                  onChange={setEditColumnType}
+                />
+              </div>
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setShowEditColumnModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={saveColumnEdit}
+                >
+                  ✓ Ok
                 </button>
               </div>
             </div>
