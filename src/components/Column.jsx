@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   SORT_OPTIONS,
+  sortOptionsForColumn,
+  isActiveColumn,
   DEFAULT_SORT,
   DEFAULT_COLUMN_TYPE,
   COLUMN_TYPES,
@@ -255,7 +257,7 @@ export default function Column({
             {showSortMenu && (
               <div className="column-sort-menu">
                 <span className="column-sort-label">Sort by</span>
-                {SORT_OPTIONS.map((option) => (
+                {sortOptionsForColumn(column).map((option) => (
                   <button
                     key={option.value}
                     className={`column-sort-item ${
@@ -310,6 +312,7 @@ export default function Column({
             canReorder={canReorder && Boolean(draggedTaskId)}
             onDropOnTask={handleDropOnTask}
             dimmed={isSuccessColumn(column)}
+            inActiveColumn={isActiveColumn(column)}
           />
         ))}
       </div>

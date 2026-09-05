@@ -8,6 +8,21 @@
   position: relative;
 }
 
+/* Completion, readable from outside: the card's bottom border fills with
+   the primary colour as the task progresses. Active columns only. */
+.task-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 4px;
+  max-width: 100%;
+  background: var(--accent);
+  border-bottom-left-radius: inherit;
+  border-top-right-radius: 2px;
+  pointer-events: none;
+  transition: width 0.2s ease;
+}
+
 .task-card:hover {
   border-color: var(--accent);
   box-shadow: 0 2px 8px var(--shadow);

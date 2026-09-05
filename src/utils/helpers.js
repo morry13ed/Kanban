@@ -34,6 +34,7 @@ export function createTask({
   isFeature = false,
   attachments = [],
   status = STATUS_NONE,
+  completion = 0,
 }) {
   return {
     id: generateId(),
@@ -51,6 +52,7 @@ export function createTask({
     isFeature,
     attachments,
     status,
+    completion,
     archived: false,
   };
 }
@@ -105,7 +107,8 @@ export const BOARD_COLORS = [
    Add an entry here and sortTasks below to expose a new column sort option. */
 export const SORT_OPTIONS = [
   { value: 'manual', label: 'Manual' },
-  { value: 'status', label: 'Status' },
+  { value: 'status', label: 'Active' },
+  { value: 'completion', label: 'Completion' },
   { value: 'priority', label: 'Score' },
   { value: 'impact', label: 'Impact' },
   { value: 'dueDate', label: 'Due date' },
@@ -113,6 +116,15 @@ export const SORT_OPTIONS = [
 ];
 
 export const DEFAULT_SORT = 'manual';
+
+// Status and completion only mean something while a task sits in an active
+// column, so other columns don't offer those sorts.
+export function sortOptionsForColumn(column) {
+  if (isActiveColumn(column)) return SORT_OPTIONS;
+  return SORT_OPTIONS.filter(
+    (o) => o.value !== 'status' && o.value !== 'completion'
+  );
+}
 
 export const COLUMN_REGULAR = 'regular';
 export const COLUMN_ACTIVE = 'active';
@@ -191,6 +203,15 @@ export function sortTasks(tasks, sortBy) {
       const arrived = (t) => t?.movedAt || t?.createdAt || '';
       return sorted.sort(
         (a, b) => rank(a) - rank(b) || arrived(a).localeCompare(arrived(b))
+      );
+    }
+
+    case 'completion': {
+      const arrived = (t) => t?.movedAt || t?.createdAt || '';
+      return sorted.sort(
+        (a, b) =>
+          (b?.completion ?? 0) - (a?.completion ?? 0) ||
+          arrived(a).localeCompare(arrived(b))
       );
     }
 

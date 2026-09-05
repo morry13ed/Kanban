@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   sortTasks,
-  SORT_OPTIONS,
+  sortOptionsForColumn,
+  isActiveColumn,
   DEFAULT_SORT,
   DEFAULT_COLUMN_TYPE,
   COLUMN_TYPES,
@@ -314,7 +315,7 @@ export default function MobileBoard({ onOpenMenu }) {
         {openMenu === 'sort' && activeColumn && (
           <div className="mboard-menu">
             <span className="mboard-menu-label">Sort by</span>
-            {SORT_OPTIONS.map((option) => (
+            {sortOptionsForColumn(activeColumn).map((option) => (
               <button
                 key={option.value}
                 type="button"
@@ -403,8 +404,9 @@ export default function MobileBoard({ onOpenMenu }) {
               >
                 <div className="mboard-task-title-row">
                   <span className="mboard-task-title">{task.title}</span>
-                  {(task.status === STATUS_ACTIVE ||
-                    task.status === STATUS_PAUSED) && (
+                  {isActiveColumn(activeColumn) &&
+                    (task.status === STATUS_ACTIVE ||
+                      task.status === STATUS_PAUSED) && (
                     <button
                       type="button"
                       className={`task-status ${task.status}`}
@@ -462,6 +464,12 @@ export default function MobileBoard({ onOpenMenu }) {
                   )}
                 </div>
               </div>
+              {isActiveColumn(activeColumn) && (
+                <div
+                  className="task-progress"
+                  style={{ width: `${task.completion ?? 0}%` }}
+                />
+              )}
             </li>
           );
         })}
@@ -514,6 +522,7 @@ export default function MobileBoard({ onOpenMenu }) {
       {showTaskModal && activeColumn && (
         <TaskModal
           task={editingTask}
+          columns={columns}
           defaultColumnId={activeColumn.id}
           members={memberNames}
           memberColorOf={(name) => getMemberColor(board, name)}

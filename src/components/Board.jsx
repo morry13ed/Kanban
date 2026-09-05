@@ -364,6 +364,7 @@ export default function Board() {
       {showTaskModal && (
         <TaskModal
           task={editingTask}
+          columns={board.columns}
           memberColorOf={(name) => getMemberColor(board, name)}
           members={boardMembers}
           defaultColumnId={defaultColumnId || board.columns[0]?.id}

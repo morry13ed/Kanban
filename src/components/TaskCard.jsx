@@ -35,6 +35,7 @@ export default function TaskCard({
   canReorder,
   onDropOnTask,
   dimmed,
+  inActiveColumn,
 }) {
   const { state, dispatch } = useApp();
   const board = state.boards.find((b) => b.id === boardId);
@@ -168,7 +169,7 @@ export default function TaskCard({
             {task.title}
           </h4>
         )}
-        {(status === STATUS_ACTIVE || status === STATUS_PAUSED) && (
+        {inActiveColumn && (status === STATUS_ACTIVE || status === STATUS_PAUSED) && (
           <button
             type="button"
             className={`task-status ${status}`}
@@ -282,6 +283,14 @@ export default function TaskCard({
           🗑
         </button>
       </div>
+
+      {inActiveColumn && (
+        <div
+          className="task-progress"
+          style={{ width: `${task.completion ?? 0}%` }}
+          title={`${task.completion ?? 0}% done`}
+        />
+      )}
     </div>
   );
 }

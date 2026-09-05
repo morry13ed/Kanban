@@ -8,6 +8,7 @@ import {
   formatLevel,
   STATUS_NONE,
   TASK_STATUS_OPTIONS,
+  isActiveColumn,
 } from '../utils/helpers';
 import SegmentedControl from './SegmentedControl';
 import {
@@ -63,6 +64,7 @@ function ChevronIcon() {
 export default function TaskModal({
   task,
   defaultColumnId,
+  columns = [],
   members = [],
   memberColorOf = () => undefined,
   onSave,
@@ -75,12 +77,16 @@ export default function TaskModal({
   // Not editable here: new tasks land in the column you added them from, and
   // existing ones move by dragging or the arrows on the card.
   const columnId = task?.columnId || defaultColumnId || '';
+  const inActiveColumn = isActiveColumn(
+    columns.find((c) => c.id === columnId)
+  );
   const [impact, setImpact] = useState(task?.impact ?? LEVEL_DEFAULT);
   const [time, setTime] = useState(task?.time ?? LEVEL_DEFAULT);
   const [demand, setDemand] = useState(task?.demand ?? LEVEL_MIN);
   const [isBug, setIsBug] = useState(task?.isBug ?? false);
   const [isFeature, setIsFeature] = useState(task?.isFeature ?? false);
   const [status, setStatus] = useState(task?.status ?? STATUS_NONE);
+  const [completion, setCompletion] = useState(task?.completion ?? 0);
   const [attachments, setAttachments] = useState(task?.attachments ?? []);
   const [attachError, setAttachError] = useState('');
   const [preview, setPreview] = useState(null);
@@ -174,6 +180,7 @@ export default function TaskModal({
       isFeature,
       attachments,
       status,
+      completion: Math.round(completion),
     });
   };
 
@@ -407,15 +414,39 @@ export default function TaskModal({
             </div>
           </div>
 
-          <div className="form-status">
-            <span className="form-status-label">Status</span>
-            <SegmentedControl
-              small
-              options={TASK_STATUS_OPTIONS}
-              value={status}
-              onChange={setStatus}
-            />
-          </div>
+          {inActiveColumn && (
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="task-completion">
+                  Completion{' '}
+                  <span className="level-value">
+                    {Math.round(completion)}%
+                  </span>
+                </label>
+                <input
+                  id="task-completion"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={completion}
+                  onChange={(e) => setCompletion(Number(e.target.value))}
+                />
+              </div>
+            </div>
+          )}
+
+          {inActiveColumn && (
+            <div className="form-status">
+              <span className="form-status-label">Active</span>
+              <SegmentedControl
+                small
+                options={TASK_STATUS_OPTIONS}
+                value={status}
+                onChange={setStatus}
+              />
+            </div>
+          )}
 
           {preview && (
             <div className="lightbox" onClick={() => setPreview(null)}>
