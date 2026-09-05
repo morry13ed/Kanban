@@ -93,6 +93,20 @@ function reducer(state, action) {
         ),
       };
     }
+    case 'DELETE_PROJECT': {
+      const id = action.payload;
+      const boards = state.boards.filter((b) => b.projectId !== id);
+      const stillActive = boards.some((b) => b.id === state.activeBoardId);
+      return {
+        ...state,
+        projects: state.projects.filter((p) => p.id !== id),
+        groups: state.groups.filter((g) => g.projectId !== id),
+        boards,
+        activeBoardId: stillActive
+          ? state.activeBoardId
+          : (boards[0]?.id ?? null),
+      };
+    }
     case 'ADD_GROUP': {
       const { projectId } = action.payload;
       const name = action.payload.name.trim();

@@ -188,6 +188,60 @@
   opacity: 1;
 }
 
+.project-menu-wrap {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+}
+
+.project-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 60;
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px var(--shadow);
+}
+
+.project-menu-item {
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.project-menu-item:hover {
+  background: var(--hover);
+}
+
+.project-menu-item.danger {
+  color: var(--danger);
+}
+
+.project-menu-item.danger:hover {
+  background: var(--danger-bg);
+}
+
+.project-menu-sep {
+  border-top: 1px solid var(--border);
+  margin: 3px 6px;
+}
+
 /* The + button's board form, anchored under the row's right edge. */
 .board-form-popover {
   position: absolute;

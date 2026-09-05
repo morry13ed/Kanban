@@ -8,6 +8,7 @@ import {
   countOpenTasks,
 } from '../utils/helpers';
 import ColorPicker from './ColorPicker';
+import ConfirmDialog from './ConfirmDialog';
 import DashedButton from './DashedButton';
 import './Sidebar.css';
 
@@ -48,7 +49,18 @@ export default function Sidebar({ onCollapse }) {
   const [collapsedGroups, setCollapsedGroups] = useState(() => new Set());
   const [editingProjectId, setEditingProjectId] = useState(null);
   const [editingProjectName, setEditingProjectName] = useState('');
+  const [projectMenuId, setProjectMenuId] = useState(null);
+  const [deletingProject, setDeletingProject] = useState(null);
   const popoverRef = useRef(null);
+
+  useEffect(() => {
+    if (!projectMenuId) return;
+    const close = (e) => {
+      if (!e.target.closest('.project-menu-wrap')) setProjectMenuId(null);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [projectMenuId]);
 
   const [editingBoardId, setEditingBoardId] = useState(null);
   const [closingBoardId, setClosingBoardId] = useState(null);
@@ -649,6 +661,48 @@ export default function Sidebar({ onCollapse }) {
                         >
                           +
                         </button>
+                        <div className="project-menu-wrap">
+                          <button
+                            type="button"
+                            className="project-action-btn"
+                            title="Project options"
+                            onClick={() =>
+                              setProjectMenuId(
+                                projectMenuId === project.id
+                                  ? null
+                                  : project.id
+                              )
+                            }
+                          >
+                            ⋯
+                          </button>
+                          {projectMenuId === project.id && (
+                            <div className="project-menu">
+                              <button
+                                type="button"
+                                className="project-menu-item"
+                                onClick={() => {
+                                  setProjectMenuId(null);
+                                  setEditingProjectId(project.id);
+                                  setEditingProjectName(project.name);
+                                }}
+                              >
+                                Edit project
+                              </button>
+                              <div className="project-menu-sep" />
+                              <button
+                                type="button"
+                                className="project-menu-item danger"
+                                onClick={() => {
+                                  setProjectMenuId(null);
+                                  setDeletingProject(project);
+                                }}
+                              >
+                                Delete project
+                              </button>
+                            </div>
+                          )}
+                        </div>
 
                         {isCreating(boardSpec) && (
                           <div className="board-form-popover" ref={popoverRef}>
@@ -814,6 +868,18 @@ export default function Sidebar({ onCollapse }) {
             </button>
           </div>
         </nav>
+      )}
+
+      {deletingProject && (
+        <ConfirmDialog
+          title="Delete project"
+          message={`Are you sure you want to delete "${deletingProject.name}"? This will remove all its boards and tasks.`}
+          onConfirm={() => {
+            dispatch({ type: 'DELETE_PROJECT', payload: deletingProject.id });
+            setDeletingProject(null);
+          }}
+          onCancel={() => setDeletingProject(null)}
+        />
       )}
     </aside>
   );
