@@ -30,7 +30,7 @@ const SYNC_LABELS = {
 // their project so nothing disappears.
 const SHOW_GROUPS = false;
 
-export default function Sidebar() {
+export default function Sidebar({ onCollapse }) {
   const { state, dispatch, syncStatus } = useApp();
   const { enabled: authEnabled, user, signOut } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
@@ -561,8 +561,8 @@ export default function Sidebar() {
         {!collapsed && <h1 className="sidebar-logo">Kanban</h1>}
         <button
           className="sidebar-toggle"
-          onClick={() => setCollapsed(!collapsed)}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          onClick={() => (onCollapse ? onCollapse() : setCollapsed(!collapsed))}
+          title={onCollapse ? 'Close menu' : collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? '→' : '←'}
         </button>

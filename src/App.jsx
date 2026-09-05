@@ -40,7 +40,7 @@ function App() {
                 }
               }}
             >
-              <Sidebar />
+              <Sidebar onCollapse={() => setDrawerOpen(false)} />
             </div>
           </div>
         )}

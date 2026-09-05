@@ -187,6 +187,7 @@ export default function MobileBoard({ onOpenMenu }) {
 
   return (
     <div className="mboard">
+      {openMenu && <div className="mboard-menu-overlay" />}
       <header className="mboard-topbar" ref={topbarRef}>
         <button type="button" className="mboard-menu-btn" onClick={onOpenMenu}>
           ☰
