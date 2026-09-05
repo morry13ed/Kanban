@@ -179,15 +179,6 @@
   color: var(--text-primary);
 }
 
-.project-edit-btn {
-  opacity: 0;
-}
-
-.project-row:hover .project-edit-btn,
-.project-row:focus-within .project-edit-btn {
-  opacity: 1;
-}
-
 .project-menu-wrap {
   position: relative;
   display: flex;

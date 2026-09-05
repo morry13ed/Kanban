@@ -640,17 +640,6 @@ export default function Sidebar({ onCollapse }) {
 
                         <button
                           type="button"
-                          className="project-action-btn project-edit-btn"
-                          title="Rename project"
-                          onClick={() => {
-                            setEditingProjectId(project.id);
-                            setEditingProjectName(project.name);
-                          }}
-                        >
-                          ✎
-                        </button>
-                        <button
-                          type="button"
                           className="project-action-btn"
                           title="Add board"
                           onClick={() =>
