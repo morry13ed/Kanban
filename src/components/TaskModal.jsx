@@ -427,7 +427,7 @@ export default function TaskModal({
                   type="range"
                   min="0"
                   max="100"
-                  step="5"
+                  step="any"
                   value={completion}
                   onChange={(e) => setCompletion(Number(e.target.value))}
                 />
