@@ -11,3 +11,48 @@
     flex-direction: column;
   }
 }
+
+/* ── Mobile shell ── */
+.mobile-app {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.drawer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(300px, 85vw);
+  background: var(--sidebar-bg);
+  box-shadow: 8px 0 30px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: drawer-in 0.2s ease;
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer {
+    animation: none;
+  }
+}
+
+.drawer .sidebar {
+  width: 100%;
+  height: 100%;
+}

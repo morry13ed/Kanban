@@ -547,3 +547,13 @@
   gap: 8px;
   padding-top: 4px;
 }
+
+/* ── Small screens ── */
+@media (max-width: 767px) {
+  .modal {
+    width: calc(100% - 20px);
+    max-width: none;
+    max-height: 92dvh;
+    overflow-y: auto;
+  }
+}
