@@ -46,8 +46,33 @@
   }
 }
 
+.drawer-overlay.closing {
+  animation: overlay-out 0.2s ease forwards;
+}
+
+.drawer-overlay.closing .drawer {
+  animation: drawer-out 0.2s ease forwards;
+}
+
+@keyframes drawer-out {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes overlay-out {
+  to {
+    background: rgba(0, 0, 0, 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .drawer {
+  .drawer,
+  .drawer-overlay.closing,
+  .drawer-overlay.closing .drawer {
     animation: none;
   }
 }

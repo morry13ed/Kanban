@@ -11,6 +11,17 @@ function App() {
   const { enabled, ready, user } = useAuth();
   const isMobile = useIsMobile();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerClosing, setDrawerClosing] = useState(false);
+
+  // Play the slide-out before unmounting; the timeout matches the CSS
+  // animation and doubles as the fallback when animations are disabled.
+  const closeDrawer = () => {
+    setDrawerClosing(true);
+    setTimeout(() => {
+      setDrawerOpen(false);
+      setDrawerClosing(false);
+    }, 200);
+  };
 
   // Cloud configured but nobody signed in: the gate. Without Supabase
   // configured the app stays a local, single-browser tool as before.
@@ -23,7 +34,10 @@ function App() {
         <MobileBoard onOpenMenu={() => setDrawerOpen(true)} />
 
         {drawerOpen && (
-          <div className="drawer-overlay" onClick={() => setDrawerOpen(false)}>
+          <div
+            className={`drawer-overlay ${drawerClosing ? 'closing' : ''}`}
+            onClick={closeDrawer}
+          >
             <div
               className="drawer"
               onClick={(e) => {
@@ -34,13 +48,13 @@ function App() {
                   e.target.closest('.board-edit-btn') ||
                   e.target.closest('.board-editor-well');
                 if (row && !stays) {
-                  setDrawerOpen(false);
+                  closeDrawer();
                 } else {
                   e.stopPropagation();
                 }
               }}
             >
-              <Sidebar onCollapse={() => setDrawerOpen(false)} />
+              <Sidebar onCollapse={closeDrawer} />
             </div>
           </div>
         )}
