@@ -795,6 +795,44 @@ export default function Sidebar({ onCollapse }) {
                   );
                 })}
 
+                {(() => {
+                  // Boards shared by someone else point at the owner's
+                  // projects; group them here without touching their data.
+                  const known = new Set(state.projects.map((p) => p.id));
+                  const sharedBoards = state.boards.filter(
+                    (b) => !known.has(b.projectId)
+                  );
+                  if (sharedBoards.length === 0) return null;
+                  const isCollapsed = collapsedProjects.has('shared-synthetic');
+                  return (
+                    <div className="project-section">
+                      <div className="project-row">
+                        <button
+                          type="button"
+                          className="project-toggle"
+                          onClick={() => toggleProject('shared-synthetic')}
+                          title={isCollapsed ? 'Expand' : 'Collapse'}
+                        >
+                          {isCollapsed ? '▸' : '▾'}
+                        </button>
+                        <span
+                          className="project-label"
+                          onClick={() => toggleProject('shared-synthetic')}
+                        >
+                          Shared
+                        </span>
+                      </div>
+                      {!isCollapsed && (
+                        <div className="project-body">
+                          <ul className="board-list">
+                            {sharedBoards.map(renderBoardRow)}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 <div className="sidebar-separator" />
 
                 {isCreating({ kind: 'project' }) ? (

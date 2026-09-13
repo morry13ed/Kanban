@@ -527,41 +527,34 @@ export function AppProvider({ children }) {
         activeBoardId: local.activeBoardId,
       };
 
-      // Boards shared by someone else reference their projects, not ours -
-      // give them a home.
+      // Boards shared by someone else reference the owner's projects, not
+      // ours. They are NOT re-filed here: rewriting projectId would be pushed
+      // back on the next edit and permanently move the board out of the
+      // owner's project (that bug re-filed real boards in Sep 2026). The
+      // sidebar groups boards with unknown projects under a synthetic
+      // "Shared" section at render time instead.
       const projects = [...(org.projects || [])];
-      const projectIds = new Set(projects.map((p) => p.id));
-      let sharedProject = projects.find((p) => p.name === 'Shared');
-      const homeless = boards.filter((b) => !projectIds.has(b.projectId));
-      const adopted = boards.map((b) => {
-        if (projectIds.has(b.projectId)) return b;
-        if (!sharedProject) {
-          sharedProject = { id: 'shared-with-me', name: 'Shared' };
-          projects.push(sharedProject);
-        }
-        return { ...b, projectId: sharedProject.id, groupId: null };
-      });
 
       dispatch({
         type: 'IMPORT_STATE',
         payload: {
           projects,
           groups: org.groups || [],
-          boards: adopted,
-          activeBoardId: org.activeBoardId ?? adopted[0]?.id ?? null,
+          boards,
+          activeBoardId: org.activeBoardId ?? boards[0]?.id ?? null,
         },
       });
 
-      if (!userState || homeless.length > 0) {
+      if (!userState) {
         await pushUserState(userId, {
           projects,
           groups: org.groups || [],
-          activeBoardId: org.activeBoardId ?? adopted[0]?.id ?? null,
+          activeBoardId: org.activeBoardId ?? boards[0]?.id ?? null,
         });
       }
 
       // Seed the diff baseline so hydration itself doesn't push everything.
-      knownBoardsRef.current = new Map(adopted.map((b) => [b.id, b]));
+      knownBoardsRef.current = new Map(boards.map((b) => [b.id, b]));
       setSyncStatus('synced');
       setHydrated(true);
     })();
