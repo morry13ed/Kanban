@@ -25,6 +25,7 @@ export default function Board() {
   const [newColumnName, setNewColumnName] = useState('');
   const [newColumnType, setNewColumnType] = useState(DEFAULT_COLUMN_TYPE);
   const [draggedTaskId, setDraggedTaskId] = useState(null);
+  const [draggedColumnId, setDraggedColumnId] = useState(null);
   const [boardMenuOpen, setBoardMenuOpen] = useState(false);
   const boardMenuRef = useRef(null);
 
@@ -232,6 +233,26 @@ export default function Board() {
     setDraggedTaskId(null);
   };
 
+  // Reorder columns: drop the dragged column on the left or right side of
+  // the target.
+  const handleColumnDrop = (targetId, edge) => {
+    const sourceId = draggedColumnId;
+    setDraggedColumnId(null);
+    if (!sourceId || sourceId === targetId || !edge) return;
+    const columns = [...board.columns];
+    const from = columns.findIndex((c) => c.id === sourceId);
+    if (from === -1) return;
+    const [moved] = columns.splice(from, 1);
+    let to = columns.findIndex((c) => c.id === targetId);
+    if (to === -1) return;
+    if (edge === 'right') to += 1;
+    columns.splice(to, 0, moved);
+    dispatch({
+      type: 'REORDER_COLUMNS',
+      payload: { boardId: board.id, columns },
+    });
+  };
+
   return (
     <div className="board">
       <div className="board-header">
@@ -309,6 +330,10 @@ export default function Board() {
             onDropAt={(beforeTaskId) => handleDropAt(column.id, beforeTaskId)}
             onDragEnd={handleDragEnd}
             draggedTaskId={draggedTaskId}
+            draggedColumnId={draggedColumnId}
+            onColumnDragStart={setDraggedColumnId}
+            onColumnDragEnd={() => setDraggedColumnId(null)}
+            onColumnDrop={handleColumnDrop}
           />
         ))}
 

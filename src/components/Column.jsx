@@ -31,12 +31,17 @@ export default function Column({
   onDropAt,
   onDragEnd,
   draggedTaskId,
+  draggedColumnId,
+  onColumnDragStart,
+  onColumnDragEnd,
+  onColumnDrop,
 }) {
   const { dispatch } = useApp();
   const [editing, setEditing] = useState(false);
   const [columnName, setColumnName] = useState(column.name);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [columnEdge, setColumnEdge] = useState(null);
   const [showSortMenu, setShowSortMenu] = useState(false);
   const sortRef = useRef(null);
   const editRef = useRef(null);
@@ -175,29 +180,65 @@ export default function Column({
 
   const handleDragOver = (e) => {
     e.preventDefault();
+    if (draggedColumnId) {
+      if (draggedColumnId === column.id) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      setColumnEdge(
+        e.clientX < rect.left + rect.width / 2 ? 'left' : 'right'
+      );
+      return;
+    }
     setDragOver(true);
   };
 
   const handleDragLeave = () => {
     setDragOver(false);
+    setColumnEdge(null);
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
+    if (draggedColumnId) {
+      const edge = columnEdge;
+      setColumnEdge(null);
+      onColumnDrop(column.id, edge);
+      return;
+    }
     setDragOver(false);
     onDrop();
   };
+
+  // The landing indicator only means something mid column-drag.
+  const dropEdge =
+    draggedColumnId && draggedColumnId !== column.id ? columnEdge : null;
 
   return (
     <div
       data-column-id={column.id}
       className={`column ${dragOver ? 'drag-over' : ''} ${
         editing ? 'editing' : ''
+      } ${dropEdge ? `col-drop-${dropEdge}` : ''} ${
+        draggedColumnId === column.id ? 'col-dragging' : ''
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      {!editing && (
+        <div
+          className="column-drag-handle"
+          draggable
+          title="Drag to reorder column"
+          onDragStart={(e) => {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/column', column.id);
+            onColumnDragStart(column.id);
+          }}
+          onDragEnd={onColumnDragEnd}
+        >
+          ⠿
+        </div>
+      )}
       <div className={`column-header ${editing ? 'editing' : ''}`}>
         {editing ? (
           <div className="column-edit" ref={editRef}>
