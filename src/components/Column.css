@@ -35,12 +35,20 @@
     margin 0.18s ease;
 }
 
-/* Whole bar out and grabbable; title row pulled 8px closer to it. */
+/* Whole bar out and grabbable. */
 .column:has(.column-header:hover) .column-drag-handle,
 .column-drag-handle:hover {
   max-height: 24px;
   opacity: 1;
-  margin: 6px 6px -8px;
+  margin: 6px 6px 0;
+}
+
+/* Title row 8px closer while the handle is out - shrink the header's own
+   padding instead of overlapping the handle, so the whole bar stays
+   hoverable and draggable. */
+.column:has(.column-header:hover) .column-header,
+.column:has(.column-drag-handle:hover) .column-header {
+  padding-top: 6px;
 }
 
 .column-drag-handle:active {
@@ -82,6 +90,7 @@
   justify-content: space-between;
   padding: 14px 14px 10px;
   flex-shrink: 0;
+  transition: padding-top 0.18s ease;
 }
 
 .column-name {
