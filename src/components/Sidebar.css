@@ -233,6 +233,56 @@
   margin: 3px 6px;
 }
 
+/* Project field inside the board editor: read-only home + Change menu. */
+.project-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.project-field .project-input,
+.project-input:disabled {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-secondary);
+  cursor: default;
+  opacity: 0.8;
+}
+
+.project-change-btn {
+  flex-shrink: 0;
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.project-change-btn:hover {
+  background: var(--hover);
+}
+
+.project-move-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px var(--shadow);
+}
+
 /* The + button's board form, anchored under the row's right edge. */
 .board-form-popover {
   position: absolute;

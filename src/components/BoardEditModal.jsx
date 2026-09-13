@@ -1,9 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import {
-  BOARD_COLORS,
-  DEFAULT_MEMBER_COLOR,
-} from '../utils/helpers';
+import { DEFAULT_MEMBER_COLOR } from '../utils/helpers';
 import ColorPicker from './ColorPicker';
 import DashedButton from './DashedButton';
 import './BoardEditModal.css';
@@ -11,9 +8,11 @@ import './BoardEditModal.css';
 // Centered board editor: name, collaborators (which is sharing), colour.
 // Reuses the collaborator row and colour dot styling from the sidebar.
 export default function BoardEditModal({ board, onClose }) {
-  const { dispatch } = useApp();
+  const { state, dispatch } = useApp();
   const [name, setName] = useState(board.name);
   const [color, setColor] = useState(board.color);
+  const [projectId, setProjectId] = useState(board.projectId);
+  const [projectMoveOpen, setProjectMoveOpen] = useState(false);
   const [collaborators, setCollaborators] = useState(
     (board.members || []).map((m) =>
       typeof m === 'string'
@@ -25,6 +24,15 @@ export default function BoardEditModal({ board, onClose }) {
   // { target: 'collab', index } | { target: 'board' }, plus fixed coords.
   const [colorPicking, setColorPicking] = useState(null);
   const pickerRef = useRef(null);
+
+  useEffect(() => {
+    if (!projectMoveOpen) return;
+    const close = (e) => {
+      if (!e.target.closest('.project-field')) setProjectMoveOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [projectMoveOpen]);
 
   useEffect(() => {
     if (!colorPicking) return;
@@ -57,7 +65,12 @@ export default function BoardEditModal({ board, onClose }) {
       type: 'UPDATE_BOARD',
       payload: {
         id: board.id,
-        updates: { name: name.trim() || board.name, color, members },
+        updates: {
+          name: name.trim() || board.name,
+          color,
+          members,
+          projectId: projectId ?? board.projectId,
+        },
       },
     });
     onClose();
@@ -81,13 +94,73 @@ export default function BoardEditModal({ board, onClose }) {
         <div className="modal-form">
           <div className="form-group">
             <label htmlFor="board-name">Board name</label>
-            <input
-              id="board-name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoFocus
-            />
+            <div className="collab-name-wrap">
+              <input
+                id="board-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoFocus
+              />
+              <button
+                type="button"
+                className="collab-color-dot"
+                style={{ backgroundColor: color }}
+                title="Board colour"
+                onClick={(e) => {
+                  // Read the anchor before setState: the synthetic event's
+                  // currentTarget is nulled once dispatch ends.
+                  const at = anchorAt(e.currentTarget);
+                  setColorPicking((current) =>
+                    current?.target === 'board'
+                      ? null
+                      : { target: 'board', ...at }
+                  );
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Project</label>
+            <div className="project-field">
+              <input
+                type="text"
+                disabled
+                value={
+                  state.projects.find((p) => p.id === projectId)?.name ??
+                  'Shared'
+                }
+                className="project-input"
+              />
+              <button
+                type="button"
+                className="project-change-btn"
+                onClick={() => setProjectMoveOpen((open) => !open)}
+              >
+                Change
+              </button>
+              {projectMoveOpen && (
+                <div className="project-move-menu">
+                  {state.projects.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className={`project-menu-item ${
+                        p.id === projectId ? 'active' : ''
+                      }`}
+                      onClick={() => {
+                        setProjectId(p.id);
+                        setProjectMoveOpen(false);
+                      }}
+                    >
+                      {p.name}
+                      {p.id === projectId && ' ✓'}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="form-group">
@@ -143,24 +216,23 @@ export default function BoardEditModal({ board, onClose }) {
           </div>
 
           <div className="form-group">
-            <label>Board colour</label>
-            <div className="board-color-picker">
-              {BOARD_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className={`board-color-dot ${color === c ? 'selected' : ''}`}
-                  style={{ backgroundColor: c }}
-                  onClick={() => setColor(c)}
-                />
-              ))}
+            <label htmlFor="board-name">Board name</label>
+            <div className="collab-name-wrap">
+              <input
+                id="board-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoFocus
+              />
               <button
                 type="button"
-                className={`board-color-dot spectrum ${
-                  BOARD_COLORS.includes(color) ? '' : 'selected'
-                }`}
-                title="Custom colour"
+                className="collab-color-dot"
+                style={{ backgroundColor: color }}
+                title="Board colour"
                 onClick={(e) => {
+                  // Read the anchor before setState: the synthetic event's
+                  // currentTarget is nulled once dispatch ends.
                   const at = anchorAt(e.currentTarget);
                   setColorPicking((current) =>
                     current?.target === 'board'
@@ -172,6 +244,47 @@ export default function BoardEditModal({ board, onClose }) {
             </div>
           </div>
 
+          <div className="form-group">
+            <label>Project</label>
+            <div className="project-field">
+              <input
+                type="text"
+                disabled
+                value={
+                  state.projects.find((p) => p.id === projectId)?.name ??
+                  'Shared'
+                }
+                className="project-input"
+              />
+              <button
+                type="button"
+                className="project-change-btn"
+                onClick={() => setProjectMoveOpen((open) => !open)}
+              >
+                Change
+              </button>
+              {projectMoveOpen && (
+                <div className="project-move-menu">
+                  {state.projects.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className={`project-menu-item ${
+                        p.id === projectId ? 'active' : ''
+                      }`}
+                      onClick={() => {
+                        setProjectId(p.id);
+                        setProjectMoveOpen(false);
+                      }}
+                    >
+                      {p.name}
+                      {p.id === projectId && ' ✓'}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
           <div className="modal-actions">
             <button type="button" className="btn btn-ghost" onClick={onClose}>
               Cancel

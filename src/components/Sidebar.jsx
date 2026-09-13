@@ -67,7 +67,18 @@ export default function Sidebar({ onCollapse }) {
   const [editingBoardName, setEditingBoardName] = useState('');
   const [editingBoardColor, setEditingBoardColor] = useState(BOARD_COLORS[0]);
   const [editingBoardCollaborators, setEditingBoardCollaborators] = useState([]);
+  const [editingBoardProjectId, setEditingBoardProjectId] = useState(null);
+  const [projectMoveOpen, setProjectMoveOpen] = useState(false);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!projectMoveOpen) return;
+    const close = (e) => {
+      if (!e.target.closest('.project-field')) setProjectMoveOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [projectMoveOpen]);
 
   // Which tiny colour picker is open:
   //   { target: 'new-collab' | 'edit-collab', index }
@@ -234,6 +245,8 @@ export default function Sidebar({ onCollapse }) {
         : { name: m.name || '', email: m.email || '', color: m.color }
     );
     setEditingBoardCollaborators(members);
+    setEditingBoardProjectId(board.projectId);
+    setProjectMoveOpen(false);
   };
 
   // Keeps the editor mounted for one transition's worth of time so the
@@ -263,7 +276,12 @@ export default function Sidebar({ onCollapse }) {
       type: 'UPDATE_BOARD',
       payload: {
         id: board.id,
-        updates: { name, color: editingBoardColor, members },
+        updates: {
+          name,
+          color: editingBoardColor,
+          members,
+          projectId: editingBoardProjectId ?? board.projectId,
+        },
       },
     });
     beginCloseEditor(board.id);
@@ -435,13 +453,76 @@ export default function Sidebar({ onCollapse }) {
           <div className={`board-editor-well ${isEditing ? 'open' : ''}`}>
           <div className="board-edit-content">
             <span className="sidebar-mini-label">Board name</span>
-            <input
-              type="text"
-              value={editingBoardName}
-              onChange={(e) => setEditingBoardName(e.target.value)}
+            <div
+              className="collab-name-wrap"
               onClick={(e) => e.stopPropagation()}
-              className="board-name-input"
-            />
+            >
+              <input
+                type="text"
+                value={editingBoardName}
+                onChange={(e) => setEditingBoardName(e.target.value)}
+                className="board-name-input"
+              />
+              <button
+                type="button"
+                className="collab-color-dot"
+                style={{ backgroundColor: editingBoardColor }}
+                title="Board colour"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const at = anchorAt(e.currentTarget);
+                  setColorPicking((current) =>
+                    current?.target === 'edit-board'
+                      ? null
+                      : { target: 'edit-board', ...at }
+                  );
+                }}
+              />
+              {colorPicking?.target === 'edit-board' &&
+                renderColorPicker(editingBoardColor, setEditingBoardColor)}
+            </div>
+            <span className="sidebar-mini-label">Project</span>
+            <div
+              className="project-field"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <input
+                type="text"
+                disabled
+                value={
+                  state.projects.find((p) => p.id === editingBoardProjectId)
+                    ?.name ?? 'Shared'
+                }
+                className="board-name-input project-input"
+              />
+              <button
+                type="button"
+                className="project-change-btn"
+                onClick={() => setProjectMoveOpen((open) => !open)}
+              >
+                Change
+              </button>
+              {projectMoveOpen && (
+                <div className="project-move-menu">
+                  {state.projects.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className={`project-menu-item ${
+                        p.id === editingBoardProjectId ? 'active' : ''
+                      }`}
+                      onClick={() => {
+                        setEditingBoardProjectId(p.id);
+                        setProjectMoveOpen(false);
+                      }}
+                    >
+                      {p.name}
+                      {p.id === editingBoardProjectId && ' ✓'}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <span className="sidebar-mini-label">Collaborators</span>
             <div
               className="collaborators-section"
@@ -493,25 +574,6 @@ export default function Sidebar({ onCollapse }) {
               >
                 + Add collaborator
               </DashedButton>
-            </div>
-            <div
-              className="board-color-picker"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {BOARD_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className={`board-color-dot ${
-                    editingBoardColor === c ? 'selected' : ''
-                  }`}
-                  style={{ backgroundColor: c }}
-                  onClick={() => setEditingBoardColor(c)}
-                />
-              ))}
-              {renderSpectrumDot('edit-board', editingBoardColor)}
-              {colorPicking?.target === 'edit-board' &&
-                renderColorPicker(editingBoardColor, setEditingBoardColor)}
             </div>
             <div className="board-edit-actions">
               <button
