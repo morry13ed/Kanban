@@ -46,6 +46,11 @@ export default function MobileBoard({ onOpenMenu }) {
   const [showEditColumnModal, setShowEditColumnModal] = useState(false);
   const [editColumnName, setEditColumnName] = useState('');
   const [editColumnType, setEditColumnType] = useState(DEFAULT_COLUMN_TYPE);
+  const [editColumnView, setEditColumnView] = useState('main'); // 'main' | 'order'
+  const [pendingOrder, setPendingOrder] = useState([]); // committed column ids
+  const [orderDraft, setOrderDraft] = useState([]); // list being dragged
+  const orderListRef = useRef(null);
+  const orderDragging = useRef(false);
   const [showBoardModal, setShowBoardModal] = useState(false);
   const menusRef = useRef(null);
   const topbarRef = useRef(null);
@@ -161,7 +166,61 @@ export default function MobileBoard({ onOpenMenu }) {
         columnType: editColumnType,
       },
     });
+    if (pendingOrder.join() !== columns.map((c) => c.id).join()) {
+      const byId = new Map(columns.map((c) => [c.id, c]));
+      dispatch({
+        type: 'REORDER_COLUMNS',
+        payload: {
+          boardId: board.id,
+          columns: pendingOrder.map((id) => byId.get(id)).filter(Boolean),
+        },
+      });
+    }
     setShowEditColumnModal(false);
+  };
+
+  const ordinal = (n) =>
+    n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`;
+
+  const orderLabel = (ids) => {
+    if (!activeColumn) return '';
+    const pos = ids.indexOf(activeColumn.id);
+    if (pos <= 0) return '1st';
+    const prev = columns.find((c) => c.id === ids[pos - 1]);
+    return `${ordinal(pos + 1)} after ${prev?.name ?? ''}`;
+  };
+
+  // One-finger reorder of the edited column inside the order list: only that
+  // row is draggable, and it follows the pointer between the other rows.
+  const startOrderDrag = (e) => {
+    e.preventDefault();
+    orderDragging.current = true;
+    const move = (ev) => {
+      if (!orderDragging.current || !orderListRef.current) return;
+      const y = ev.clientY ?? ev.touches?.[0]?.clientY;
+      if (y == null) return;
+      const rows = [...orderListRef.current.children];
+      setOrderDraft((draft) => {
+        const from = draft.indexOf(activeColumn.id);
+        let to = from;
+        rows.forEach((row, idx) => {
+          const r = row.getBoundingClientRect();
+          if (y > r.top + r.height / 2) to = idx;
+        });
+        if (y < rows[0]?.getBoundingClientRect().top) to = 0;
+        if (to === from) return draft;
+        const next = draft.filter((id) => id !== activeColumn.id);
+        next.splice(to, 0, activeColumn.id);
+        return next;
+      });
+    };
+    const up = () => {
+      orderDragging.current = false;
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', up);
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
   };
 
   const addColumn = () => {
@@ -355,6 +414,9 @@ export default function MobileBoard({ onOpenMenu }) {
                 if (!activeColumn) return;
                 setEditColumnName(activeColumn.name);
                 setEditColumnType(activeColumn.type || DEFAULT_COLUMN_TYPE);
+                setEditColumnView('main');
+                setPendingOrder(columns.map((c) => c.id));
+                setOrderDraft(columns.map((c) => c.id));
                 setShowEditColumnModal(true);
               }}
             >
@@ -602,7 +664,22 @@ export default function MobileBoard({ onOpenMenu }) {
         >
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Edit column</h3>
+              {editColumnView === 'order' && (
+                <button
+                  type="button"
+                  className="mcol-back"
+                  title="Back"
+                  onClick={() => {
+                    setOrderDraft(pendingOrder);
+                    setEditColumnView('main');
+                  }}
+                >
+                  ←
+                </button>
+              )}
+              <h3>
+                {editColumnView === 'order' ? 'Column order' : 'Edit column'}
+              </h3>
               <button
                 className="modal-close"
                 onClick={() => setShowEditColumnModal(false)}
@@ -610,45 +687,112 @@ export default function MobileBoard({ onOpenMenu }) {
                 ×
               </button>
             </div>
-            <div className="modal-form">
-              <div className="form-group">
-                <label htmlFor="edit-column-name">Column name</label>
-                <input
-                  id="edit-column-name"
-                  type="text"
-                  value={editColumnName}
-                  onChange={(e) => setEditColumnName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') saveColumnEdit();
-                    if (e.key === 'Escape') setShowEditColumnModal(false);
-                  }}
-                  autoFocus
-                />
-              </div>
-              <div className="form-status">
-                <span className="form-status-label">Type</span>
-                <SegmentedControl
-                  small
-                  options={COLUMN_TYPES}
-                  value={editColumnType}
-                  onChange={setEditColumnType}
-                />
-              </div>
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={() => setShowEditColumnModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={saveColumnEdit}
-                >
-                  ✓ Ok
-                </button>
+            <div className="mcol-panes-clip">
+              <div
+                className={`mcol-panes ${
+                  editColumnView === 'order' ? 'order' : ''
+                }`}
+              >
+                <div className="mcol-pane">
+                  <div className="modal-form">
+                    <div className="form-group">
+                      <label htmlFor="edit-column-name">Column name</label>
+                      <input
+                        id="edit-column-name"
+                        type="text"
+                        value={editColumnName}
+                        onChange={(e) => setEditColumnName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveColumnEdit();
+                          if (e.key === 'Escape')
+                            setShowEditColumnModal(false);
+                        }}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="form-status">
+                      <span className="form-status-label">Type</span>
+                      <SegmentedControl
+                        small
+                        options={COLUMN_TYPES}
+                        value={editColumnType}
+                        onChange={setEditColumnType}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Order</label>
+                      <button
+                        type="button"
+                        className="mcol-order-field"
+                        onClick={() => {
+                          setOrderDraft(pendingOrder);
+                          setEditColumnView('order');
+                        }}
+                      >
+                        {orderLabel(pendingOrder)}
+                        <span className="mcol-order-chevron">›</span>
+                      </button>
+                    </div>
+                    <div className="modal-actions">
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() => setShowEditColumnModal(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={saveColumnEdit}
+                      >
+                        ✓ Ok
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="mcol-pane">
+                  <div className="modal-form">
+                    <ul className="mcol-order-list" ref={orderListRef}>
+                      {orderDraft.map((id) => {
+                        const col = columns.find((c) => c.id === id);
+                        const isEdited = id === activeColumn.id;
+                        return (
+                          <li
+                            key={id}
+                            className={`mcol-order-row ${
+                              isEdited ? 'edited' : ''
+                            }`}
+                          >
+                            <span className="mcol-order-name">
+                              {col?.name}
+                            </span>
+                            {isEdited && (
+                              <span
+                                className="mcol-order-grip"
+                                onPointerDown={startOrderDrag}
+                              >
+                                ⠿
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    <div className="modal-actions">
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => {
+                          setPendingOrder(orderDraft);
+                          setEditColumnView('main');
+                        }}
+                      >
+                        Save order
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
