@@ -15,6 +15,7 @@
 /* Reveal-on-hover drag handle: a full-width bar that pushes the column
    down with the same kind of transition as the task action row. */
 .column-drag-handle {
+  height: 24px;
   max-height: 0;
   opacity: 0;
   overflow: hidden;
@@ -22,27 +23,24 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin: 0 6px;
   background: var(--hover);
   color: var(--text-secondary);
   font-size: 14px;
   line-height: 1;
   letter-spacing: 3px;
   cursor: grab;
-  border-radius: 10px 10px 0 0;
+  border-radius: 8px;
   transition: max-height 0.18s ease, opacity 0.18s ease,
-    margin-bottom 0.18s ease;
+    margin 0.18s ease;
 }
 
+/* Whole bar out and grabbable; title row pulled 8px closer to it. */
 .column:has(.column-header:hover) .column-drag-handle,
 .column-drag-handle:hover {
-  max-height: 28px;
+  max-height: 24px;
   opacity: 1;
-}
-
-/* Pull the title row 8px closer to the handle while it is out. */
-.column:has(.column-header:hover) .column-drag-handle,
-.column-drag-handle:hover {
-  margin-bottom: -8px;
+  margin: 6px 6px -8px;
 }
 
 .column-drag-handle:active {
