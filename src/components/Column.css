@@ -88,7 +88,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 14px 10px;
+  padding: 14px 14px 4px;
   flex-shrink: 0;
   transition: padding-top 0.18s ease;
 }
@@ -282,8 +282,10 @@
   font-size: 11px;
 }
 
+/* The 6px of headroom keeps the first card's drop-top insertion line
+   (drawn 5px above the card) inside the scroll clip. */
 .column-tasks {
-  padding: 0 10px 10px;
+  padding: 6px 10px 10px;
   overflow-y: auto;
   flex: 1;
   display: flex;
