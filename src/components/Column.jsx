@@ -20,6 +20,7 @@ export default function Column({
   boardId,
   isFirst,
   isLast,
+  isDone,
   onAddTask,
   onEditTask,
   onMoveTask,
@@ -341,6 +342,7 @@ export default function Column({
             boardId={boardId}
             isFirst={isFirst}
             isLast={isLast}
+            isDone={isDone}
             onEdit={() => onEditTask(task)}
             onMoveLeft={() => onMoveTask(task.id, -1)}
             onMoveRight={() => onMoveTask(task.id, 1)}

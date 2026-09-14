@@ -7,6 +7,7 @@ import {
   DEFAULT_COLUMN_TYPE,
   COLUMN_TYPES,
   isSuccessColumn,
+  doneColumnOf,
 } from '../utils/helpers';
 import { fireConfetti } from '../utils/confetti';
 import Column from './Column';
@@ -169,16 +170,16 @@ export default function Board() {
   };
 
   const handleCompleteTask = (taskId) => {
-    const lastColumn = board.columns[board.columns.length - 1];
-    if (!lastColumn) return;
+    const doneColumn = doneColumnOf(board);
+    if (!doneColumn) return;
 
-    celebrateIfSuccess(taskId, lastColumn.id);
+    celebrateIfSuccess(taskId, doneColumn.id);
     dispatch({
       type: 'MOVE_TASK',
       payload: {
         boardId: board.id,
         taskId,
-        targetColumnId: lastColumn.id,
+        targetColumnId: doneColumn.id,
       },
     });
   };
@@ -319,6 +320,7 @@ export default function Board() {
             boardId={board.id}
             isFirst={index === 0}
             isLast={index === board.columns.length - 1}
+            isDone={column.id === doneColumnOf(board)?.id}
             onAddTask={() => handleAddTask(column.id)}
             onEditTask={handleEditTask}
             onMoveTask={handleMoveTask}

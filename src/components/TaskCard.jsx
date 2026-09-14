@@ -23,6 +23,7 @@ export default function TaskCard({
   boardId,
   isFirst,
   isLast,
+  isDone,
   onEdit,
   onMoveLeft,
   onMoveRight,
@@ -257,7 +258,7 @@ export default function TaskCard({
             →
           </button>
         )}
-        {!isLast && (
+        {!isDone && (
           <button
             className="task-action-btn complete"
             onClick={onComplete}
@@ -266,7 +267,7 @@ export default function TaskCard({
             ✓
           </button>
         )}
-        {isLast && (
+        {isDone && (
           <button
             className="task-action-btn archive"
             onClick={onArchive}
