@@ -291,6 +291,7 @@ export default function TaskModal({
             )}
           </div>
 
+          <div className="form-row board-check-row">
           {boardOptions.length > 0 && (
             <div className="form-group">
               <label htmlFor="task-board">Board</label>
@@ -356,6 +357,7 @@ export default function TaskModal({
               />
               Feature
             </label>
+          </div>
           </div>
 
           <div className="form-row">
