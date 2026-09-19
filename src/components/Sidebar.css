@@ -526,12 +526,7 @@
   opacity: 1;
 }
 
-.board-item.editing > .board-edit-actions .sub-delete {
-  margin-right: auto;
-  color: var(--danger);
-}
-
-.board-dot {
+.board-item.editing > .board-dot {
   display: none;
 }
 
