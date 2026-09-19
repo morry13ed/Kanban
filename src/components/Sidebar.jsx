@@ -479,7 +479,7 @@ export default function Sidebar({ onCollapse }) {
           dispatch({ type: 'SET_ACTIVE_BOARD', payload: board.id });
         }}
       >
-        {subBoards.length > 0 && (
+        {subBoards.length > 0 ? (
           <button
             type="button"
             className="project-toggle board-subs-toggle"
@@ -491,6 +491,8 @@ export default function Sidebar({ onCollapse }) {
           >
             {subsCollapsed ? '▸' : '▾'}
           </button>
+        ) : (
+          <span className="board-toggle-spacer" />
         )}
         <span className="board-dot" style={{ backgroundColor: board.color }} />
         {isEditing || isClosing ? (

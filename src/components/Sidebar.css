@@ -386,18 +386,16 @@
   color: var(--danger);
 }
 
-/* Chevron on a board row that has sub-boards. It floats in the gutter to
-   the row's left so every circle - master, sub, chevron-less - lines up in
-   one column. */
-.board-subs-toggle {
-  position: absolute;
-  left: -14px;
-  top: 50%;
-  transform: translateY(-50%);
+/* Every board row reserves the same slot before its dot: the chevron when
+   the board has sub-boards, empty space otherwise - so all circles line up
+   in one column while rows stay indented under their project. */
+.board-toggle-spacer {
+  width: 18px;
+  flex-shrink: 0;
 }
 
 /* Sub-boards read apart by their smaller, bolder name; the dot stays in the
-   same column as every other board's for scannability. */
+   same column as the master's. */
 .board-item.sub-board {
   font-size: 12px;
   font-weight: 600;
