@@ -63,6 +63,8 @@ export default function TaskModal({
   task,
   defaultColumnId,
   columns = [],
+  boardOptions = [],
+  currentBoardId = null,
   members = [],
   memberColorOf = () => undefined,
   onSave,
@@ -90,7 +92,21 @@ export default function TaskModal({
   const [attachError, setAttachError] = useState('');
   const [preview, setPreview] = useState(null);
   const [assigneeMenuOpen, setAssigneeMenuOpen] = useState(false);
+  const [targetBoardId, setTargetBoardId] = useState(currentBoardId);
+  const [boardMenuOpen, setBoardMenuOpen] = useState(false);
   const assigneeRef = useRef(null);
+  const boardSelectRef = useRef(null);
+
+  useEffect(() => {
+    if (!boardMenuOpen) return;
+    const onPointerDown = (e) => {
+      if (boardSelectRef.current && !boardSelectRef.current.contains(e.target)) {
+        setBoardMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [boardMenuOpen]);
   const fileInputRef = useRef(null);
 
   // The assignee menu dismisses on a click anywhere else.
@@ -180,7 +196,7 @@ export default function TaskModal({
       attachments,
       status,
       completion: Math.round(completion),
-    });
+    }, targetBoardId);
   };
 
   return (
@@ -274,6 +290,50 @@ export default function TaskModal({
               <span className="attachment-error">{attachError}</span>
             )}
           </div>
+
+          {boardOptions.length > 0 && (
+            <div className="form-group">
+              <label htmlFor="task-board">Board</label>
+              <div className="assignee-field" ref={boardSelectRef}>
+                <button
+                  type="button"
+                  id="task-board"
+                  className="assignee-select"
+                  onClick={() => setBoardMenuOpen((open) => !open)}
+                >
+                  <span className="assignee-select-value">
+                    {boardOptions.find((o) => o.id === targetBoardId)?.name ??
+                      boardOptions[0]?.name}
+                  </span>
+                  <ChevronIcon />
+                </button>
+                {boardMenuOpen && (
+                  <div className="assignee-menu">
+                    {boardOptions.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className={`assignee-menu-item ${
+                          option.id === targetBoardId ? 'selected' : ''
+                        }`}
+                        onClick={() => {
+                          setTargetBoardId(option.id);
+                          setBoardMenuOpen(false);
+                        }}
+                      >
+                        <span className="assignee-menu-name">
+                          {option.name}
+                        </span>
+                        {option.id === targetBoardId && (
+                          <span className="assignee-menu-check">✓</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="form-checkbox-row">
             <label className="form-checkbox">

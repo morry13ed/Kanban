@@ -80,6 +80,20 @@ export default function Board() {
   // Column-level edits always land on the board that owns the columns.
   const columnsBoardId = board.parentBoardId || board.id;
 
+  // The task modal's Board picker: master first, then its sub-boards. Only
+  // offered when sub-boards exist at all.
+  const masterBoard = state.boards.find((b) => b.id === columnsBoardId) ?? board;
+  const masterSubs = state.boards.filter(
+    (b) => b.parentBoardId === masterBoard.id
+  );
+  const boardOptions =
+    masterSubs.length > 0
+      ? [
+          { id: masterBoard.id, name: `${masterBoard.name} · main` },
+          ...masterSubs.map((sb) => ({ id: sb.id, name: sb.name })),
+        ]
+      : [];
+
   const inferredMembers = Array.from(
     new Set(
       allTasks
@@ -117,20 +131,27 @@ export default function Board() {
     setShowTaskModal(true);
   };
 
-  const handleSaveTask = (taskData) => {
+  const handleSaveTask = (taskData, targetBoardId) => {
     if (editingTask) {
+      const owner = editingTask._boardId ?? board.id;
       dispatch({
         type: 'UPDATE_TASK',
-        payload: {
-          boardId: editingTask._boardId ?? board.id,
-          taskId: editingTask.id,
-          updates: taskData,
-        },
+        payload: { boardId: owner, taskId: editingTask.id, updates: taskData },
       });
+      if (targetBoardId && targetBoardId !== owner) {
+        dispatch({
+          type: 'TRANSFER_TASK',
+          payload: {
+            fromBoardId: owner,
+            toBoardId: targetBoardId,
+            taskId: editingTask.id,
+          },
+        });
+      }
     } else {
       dispatch({
         type: 'ADD_TASK',
-        payload: { boardId: board.id, ...taskData },
+        payload: { boardId: targetBoardId ?? board.id, ...taskData },
       });
     }
     setShowTaskModal(false);
@@ -443,6 +464,10 @@ export default function Board() {
         <TaskModal
           task={editingTask}
           columns={columns}
+          boardOptions={boardOptions}
+          currentBoardId={
+            editingTask ? (editingTask._boardId ?? board.id) : board.id
+          }
           memberColorOf={(name) => getMemberColor(board, name)}
           members={boardMembers}
           defaultColumnId={defaultColumnId || columns[0]?.id}

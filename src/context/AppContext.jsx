@@ -434,6 +434,24 @@ function reducer(state, action) {
         }),
       };
     }
+    // Moves a task between a master and its sub-boards. Columns are shared,
+    // so the task keeps its column and manual position appends at the end.
+    case 'TRANSFER_TASK': {
+      const { fromBoardId, toBoardId, taskId } = action.payload;
+      if (fromBoardId === toBoardId) return state;
+      const from = state.boards.find((b) => b.id === fromBoardId);
+      const task = from?.tasks.find((t) => t.id === taskId);
+      if (!task) return state;
+      return {
+        ...state,
+        boards: state.boards.map((b) => {
+          if (b.id === fromBoardId)
+            return { ...b, tasks: b.tasks.filter((t) => t.id !== taskId) };
+          if (b.id === toBoardId) return { ...b, tasks: [...b.tasks, task] };
+          return b;
+        }),
+      };
+    }
     case 'ARCHIVE_TASK': {
       return {
         ...state,
