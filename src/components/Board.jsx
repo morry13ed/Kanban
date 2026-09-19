@@ -8,6 +8,8 @@ import {
   COLUMN_TYPES,
   isSuccessColumn,
   doneColumnOf,
+  boardColumns,
+  subBoardsOf,
 } from '../utils/helpers';
 import { fireConfetti } from '../utils/confetti';
 import Column from './Column';
@@ -26,6 +28,8 @@ export default function Board() {
   const [newColumnName, setNewColumnName] = useState('');
   const [newColumnType, setNewColumnType] = useState(DEFAULT_COLUMN_TYPE);
   const [draggedTaskId, setDraggedTaskId] = useState(null);
+  const [showSubBoardForm, setShowSubBoardForm] = useState(false);
+  const [newSubBoardName, setNewSubBoardName] = useState('');
   const [draggedColumnId, setDraggedColumnId] = useState(null);
   const [boardMenuOpen, setBoardMenuOpen] = useState(false);
   const boardMenuRef = useRef(null);
@@ -61,9 +65,24 @@ export default function Board() {
     );
   }
 
+  // Sub-boards borrow the master's columns; a master's view also shows its
+  // sub-boards' tasks, each annotated with the board it really lives in.
+  const columns = boardColumns(board, state.boards);
+  const subBoards = subBoardsOf(board, state.boards);
+  const allTasks = [
+    ...board.tasks.map((t) => ({ ...t, _boardId: board.id })),
+    ...subBoards.flatMap((sb) =>
+      sb.tasks.map((t) => ({ ...t, _boardId: sb.id, _sub: sb.name }))
+    ),
+  ];
+  const ownerOf = (taskId) =>
+    allTasks.find((t) => t.id === taskId)?._boardId ?? board.id;
+  // Column-level edits always land on the board that owns the columns.
+  const columnsBoardId = board.parentBoardId || board.id;
+
   const inferredMembers = Array.from(
     new Set(
-      board.tasks
+      allTasks
         .map((t) => t.assignee)
         .filter((a) => a && a !== 'Unassigned')
     )
@@ -76,7 +95,7 @@ export default function Board() {
   const boardMembers =
     memberNamesFromBoard.length > 0 ? memberNamesFromBoard : inferredMembers;
 
-  const filteredTasks = board.tasks.filter((t) => {
+  const filteredTasks = allTasks.filter((t) => {
     if (t.archived) return false;
     if (state.filter === 'All') return true;
     return t.assignee === state.filter;
@@ -103,7 +122,7 @@ export default function Board() {
       dispatch({
         type: 'UPDATE_TASK',
         payload: {
-          boardId: board.id,
+          boardId: editingTask._boardId ?? board.id,
           taskId: editingTask.id,
           updates: taskData,
         },
@@ -128,7 +147,7 @@ export default function Board() {
     if (!name) return;
     dispatch({
       type: 'ADD_COLUMN',
-      payload: { boardId: board.id, name, type: newColumnType },
+      payload: { boardId: columnsBoardId, name, type: newColumnType },
     });
     setNewColumnName('');
     setNewColumnType(DEFAULT_COLUMN_TYPE);
@@ -138,10 +157,10 @@ export default function Board() {
   // Fires only on an actual transfer into a success column, so nudging a task
   // around inside one stays quiet.
   const celebrateIfSuccess = (taskId, targetColumnId) => {
-    const task = board.tasks.find((t) => t.id === taskId);
+    const task = allTasks.find((t) => t.id === taskId);
     if (!task || task.columnId === targetColumnId) return;
 
-    const target = board.columns.find((c) => c.id === targetColumnId);
+    const target = columns.find((c) => c.id === targetColumnId);
     if (!isSuccessColumn(target)) return;
 
     const el = document.querySelector(`[data-column-id="${targetColumnId}"]`);
@@ -152,32 +171,32 @@ export default function Board() {
   };
 
   const handleMoveTask = (taskId, direction) => {
-    const task = board.tasks.find((t) => t.id === taskId);
+    const task = allTasks.find((t) => t.id === taskId);
     if (!task) return;
-    const colIndex = board.columns.findIndex((c) => c.id === task.columnId);
+    const colIndex = columns.findIndex((c) => c.id === task.columnId);
     const targetIndex = colIndex + direction;
-    if (targetIndex < 0 || targetIndex >= board.columns.length) return;
+    if (targetIndex < 0 || targetIndex >= columns.length) return;
 
-    celebrateIfSuccess(taskId, board.columns[targetIndex].id);
+    celebrateIfSuccess(taskId, columns[targetIndex].id);
     dispatch({
       type: 'MOVE_TASK',
       payload: {
-        boardId: board.id,
+        boardId: task._boardId,
         taskId,
-        targetColumnId: board.columns[targetIndex].id,
+        targetColumnId: columns[targetIndex].id,
       },
     });
   };
 
   const handleCompleteTask = (taskId) => {
-    const doneColumn = doneColumnOf(board);
+    const doneColumn = doneColumnOf(board, state.boards);
     if (!doneColumn) return;
 
     celebrateIfSuccess(taskId, doneColumn.id);
     dispatch({
       type: 'MOVE_TASK',
       payload: {
-        boardId: board.id,
+        boardId: ownerOf(taskId),
         taskId,
         targetColumnId: doneColumn.id,
       },
@@ -187,14 +206,14 @@ export default function Board() {
   const handleArchiveTask = (taskId) => {
     dispatch({
       type: 'ARCHIVE_TASK',
-      payload: { boardId: board.id, taskId },
+      payload: { boardId: ownerOf(taskId), taskId },
     });
   };
 
   const handleDeleteTask = (taskId) => {
     dispatch({
       type: 'DELETE_TASK',
-      payload: { boardId: board.id, taskId },
+      payload: { boardId: ownerOf(taskId), taskId },
     });
   };
 
@@ -206,8 +225,8 @@ export default function Board() {
   const handleDropAt = (columnId, beforeTaskId) => {
     if (!draggedTaskId) return;
 
-    const dragged = board.tasks.find((t) => t.id === draggedTaskId);
-    const column = board.columns.find((c) => c.id === columnId);
+    const dragged = allTasks.find((t) => t.id === draggedTaskId);
+    const column = columns.find((c) => c.id === columnId);
     const isSorted = column && (column.sortBy || DEFAULT_SORT) !== DEFAULT_SORT;
 
     // Rearranging inside a sorted column can't change what you see, so don't
@@ -217,14 +236,19 @@ export default function Board() {
       return;
     }
 
+    // Manual order lives per board, so "before" only means something between
+    // tasks of the same board; across boards it falls back to a plain move.
+    const anchorOk =
+      beforeTaskId && ownerOf(beforeTaskId) === dragged?._boardId;
+
     celebrateIfSuccess(draggedTaskId, columnId);
     dispatch({
       type: 'REORDER_TASK',
       payload: {
-        boardId: board.id,
+        boardId: dragged?._boardId ?? board.id,
         taskId: draggedTaskId,
         targetColumnId: columnId,
-        beforeTaskId,
+        beforeTaskId: anchorOk ? beforeTaskId : null,
       },
     });
     setDraggedTaskId(null);
@@ -240,18 +264,29 @@ export default function Board() {
     const sourceId = draggedColumnId;
     setDraggedColumnId(null);
     if (!sourceId || sourceId === targetId || !edge) return;
-    const columns = [...board.columns];
-    const from = columns.findIndex((c) => c.id === sourceId);
+    const next = [...columns];
+    const from = next.findIndex((c) => c.id === sourceId);
     if (from === -1) return;
-    const [moved] = columns.splice(from, 1);
-    let to = columns.findIndex((c) => c.id === targetId);
+    const [moved] = next.splice(from, 1);
+    let to = next.findIndex((c) => c.id === targetId);
     if (to === -1) return;
     if (edge === 'right') to += 1;
-    columns.splice(to, 0, moved);
+    next.splice(to, 0, moved);
     dispatch({
       type: 'REORDER_COLUMNS',
-      payload: { boardId: board.id, columns },
+      payload: { boardId: columnsBoardId, columns: next },
     });
+  };
+
+  const handleAddSubBoard = () => {
+    const name = newSubBoardName.trim();
+    if (!name) return;
+    dispatch({
+      type: 'ADD_SUB_BOARD',
+      payload: { parentId: board.id, name },
+    });
+    setNewSubBoardName('');
+    setShowSubBoardForm(false);
   };
 
   return (
@@ -292,6 +327,22 @@ export default function Board() {
             </button>
             {boardMenuOpen && (
               <div className="board-menu">
+                {!board.parentBoardId && (
+                  <>
+                    <button
+                      type="button"
+                      className="board-menu-item"
+                      onClick={() => {
+                        setBoardMenuOpen(false);
+                        setNewSubBoardName('');
+                        setShowSubBoardForm(true);
+                      }}
+                    >
+                      Add sub-board
+                    </button>
+                    <div className="board-menu-sep" />
+                  </>
+                )}
                 <button
                   type="button"
                   className="board-menu-item danger"
@@ -300,7 +351,7 @@ export default function Board() {
                     setShowDeleteConfirm(true);
                   }}
                 >
-                  Delete board
+                  {board.parentBoardId ? 'Delete sub-board' : 'Delete board'}
                 </button>
               </div>
             )}
@@ -309,7 +360,7 @@ export default function Board() {
       </div>
 
       <div className="board-columns">
-        {board.columns.map((column, index) => (
+        {columns.map((column, index) => (
           <Column
             key={column.id}
             column={column}
@@ -317,10 +368,10 @@ export default function Board() {
               filteredTasks.filter((t) => t.columnId === column.id),
               column.sortBy
             )}
-            boardId={board.id}
+            boardId={columnsBoardId}
             isFirst={index === 0}
-            isLast={index === board.columns.length - 1}
-            isDone={column.id === doneColumnOf(board)?.id}
+            isLast={index === columns.length - 1}
+            isDone={column.id === doneColumnOf(board, state.boards)?.id}
             onAddTask={() => handleAddTask(column.id)}
             onEditTask={handleEditTask}
             onMoveTask={handleMoveTask}
@@ -391,10 +442,10 @@ export default function Board() {
       {showTaskModal && (
         <TaskModal
           task={editingTask}
-          columns={board.columns}
+          columns={columns}
           memberColorOf={(name) => getMemberColor(board, name)}
           members={boardMembers}
-          defaultColumnId={defaultColumnId || board.columns[0]?.id}
+          defaultColumnId={defaultColumnId || columns[0]?.id}
           onSave={handleSaveTask}
           onClose={() => {
             setShowTaskModal(false);
@@ -405,11 +456,69 @@ export default function Board() {
 
       {showDeleteConfirm && (
         <ConfirmDialog
-          title="Delete Board"
-          message={`Are you sure you want to delete "${board.name}"? This will remove all tasks and columns.`}
+          title={board.parentBoardId ? 'Delete sub-board' : 'Delete Board'}
+          message={
+            board.parentBoardId
+              ? `Are you sure you want to delete "${board.name}"? This will remove its tasks. The master board is not affected.`
+              : subBoards.length > 0
+                ? `Are you sure you want to delete "${board.name}"? This will remove all tasks and columns, including its ${subBoards.length} sub-board${subBoards.length !== 1 ? 's' : ''}.`
+                : `Are you sure you want to delete "${board.name}"? This will remove all tasks and columns.`
+          }
           onConfirm={handleDeleteBoard}
           onCancel={() => setShowDeleteConfirm(false)}
         />
+      )}
+
+      {showSubBoardForm && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowSubBoardForm(false)}
+        >
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Add sub-board</h3>
+              <button
+                className="modal-close"
+                onClick={() => setShowSubBoardForm(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-form">
+              <div className="form-group">
+                <label htmlFor="sub-board-name">Sub-board name</label>
+                <input
+                  id="sub-board-name"
+                  type="text"
+                  value={newSubBoardName}
+                  onChange={(e) => setNewSubBoardName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAddSubBoard();
+                    if (e.key === 'Escape') setShowSubBoardForm(false);
+                  }}
+                  placeholder="Sub-board name..."
+                  autoFocus
+                />
+              </div>
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setShowSubBoardForm(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleAddSubBoard}
+                >
+                  Create
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

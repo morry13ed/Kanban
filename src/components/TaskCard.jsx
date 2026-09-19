@@ -40,6 +40,8 @@ export default function TaskCard({
 }) {
   const { state, dispatch } = useApp();
   const board = state.boards.find((b) => b.id === boardId);
+  // A task shown on a master board may really live in a sub-board.
+  const ownerBoardId = task._boardId ?? boardId;
   const assigneeColor = getMemberColor(board, task.assignee);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(task.title);
@@ -60,7 +62,7 @@ export default function TaskCard({
     dispatch({
       type: 'UPDATE_TASK',
       payload: {
-        boardId,
+        boardId: ownerBoardId,
         taskId: task.id,
         updates: {
           status: status === STATUS_ACTIVE ? STATUS_PAUSED : STATUS_ACTIVE,
@@ -90,7 +92,7 @@ export default function TaskCard({
       dispatch({
         type: 'UPDATE_TASK',
         payload: {
-          boardId,
+          boardId: ownerBoardId,
           taskId: task.id,
           updates: { title: nextTitle },
         },
@@ -139,6 +141,18 @@ export default function TaskCard({
       onDrop={handleDrop}
       onClick={onEdit}
     >
+      {task._sub && (
+        <span
+          className="task-subchip"
+          title={`Sub-board: ${task._sub}`}
+          style={{
+            backgroundColor: board?.color,
+            color: readableTextOn(board?.color),
+          }}
+        >
+          {task._sub}
+        </span>
+      )}
       <div className="task-card-header">
         {isEditingTitle ? (
           <input

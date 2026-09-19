@@ -4,6 +4,8 @@ import {
   sortTasks,
   sortOptionsForColumn,
   isActiveColumn,
+  boardColumns,
+  subBoardsOf,
   DEFAULT_SORT,
   DEFAULT_COLUMN_TYPE,
   COLUMN_TYPES,
@@ -52,6 +54,8 @@ export default function MobileBoard({ onOpenMenu }) {
   const orderListRef = useRef(null);
   const orderDragging = useRef(false);
   const [showBoardModal, setShowBoardModal] = useState(false);
+  const [showSubBoardModal, setShowSubBoardModal] = useState(false);
+  const [newSubBoardName, setNewSubBoardName] = useState('');
   const menusRef = useRef(null);
   const topbarRef = useRef(null);
 
@@ -86,7 +90,19 @@ export default function MobileBoard({ onOpenMenu }) {
   }
 
   const project = state.projects.find((p) => p.id === board.projectId);
-  const columns = board.columns;
+  // Sub-boards borrow the master's columns; a master's view also shows its
+  // sub-boards' tasks, annotated with the board they really live in.
+  const columns = boardColumns(board, state.boards);
+  const columnsBoardId = board.parentBoardId || board.id;
+  const subBoards = subBoardsOf(board, state.boards);
+  const allTasks = [
+    ...board.tasks.map((t) => ({ ...t, _boardId: board.id })),
+    ...subBoards.flatMap((sb) =>
+      sb.tasks.map((t) => ({ ...t, _boardId: sb.id, _sub: sb.name }))
+    ),
+  ];
+  const ownerOf = (taskId) =>
+    allTasks.find((t) => t.id === taskId)?._boardId ?? board.id;
   const activeColumn =
     columns.find((c) => c.id === rawColumnId) ?? columns[0] ?? null;
 
@@ -99,7 +115,7 @@ export default function MobileBoard({ onOpenMenu }) {
 
   const tasks = activeColumn
     ? sortTasks(
-        board.tasks.filter((t) => {
+        allTasks.filter((t) => {
           if (t.archived || t.columnId !== activeColumn.id) return false;
           if (state.filter === 'All') return true;
           return t.assignee === state.filter;
@@ -109,7 +125,7 @@ export default function MobileBoard({ onOpenMenu }) {
     : [];
 
   const celebrateIfSuccess = (taskId, targetColumnId) => {
-    const task = board.tasks.find((t) => t.id === taskId);
+    const task = allTasks.find((t) => t.id === taskId);
     const target = columns.find((c) => c.id === targetColumnId);
     if (!task || task.columnId === targetColumnId) return;
     if (isSuccessColumn(target)) fireConfetti();
@@ -119,7 +135,7 @@ export default function MobileBoard({ onOpenMenu }) {
     celebrateIfSuccess(taskId, targetColumnId);
     dispatch({
       type: 'MOVE_TASK',
-      payload: { boardId: board.id, taskId, targetColumnId },
+      payload: { boardId: ownerOf(taskId), taskId, targetColumnId },
     });
     setMovingTaskId(null);
   };
@@ -128,7 +144,7 @@ export default function MobileBoard({ onOpenMenu }) {
     dispatch({
       type: 'UPDATE_TASK',
       payload: {
-        boardId: board.id,
+        boardId: task._boardId ?? board.id,
         taskId: task.id,
         updates: {
           status:
@@ -143,7 +159,11 @@ export default function MobileBoard({ onOpenMenu }) {
       editingTask
         ? {
             type: 'UPDATE_TASK',
-            payload: { boardId: board.id, taskId: editingTask.id, updates: data },
+            payload: {
+              boardId: editingTask._boardId ?? board.id,
+              taskId: editingTask.id,
+              updates: data,
+            },
           }
         : { type: 'ADD_TASK', payload: { boardId: board.id, ...data } }
     );
@@ -156,12 +176,12 @@ export default function MobileBoard({ onOpenMenu }) {
     const name = editColumnName.trim() || activeColumn.name;
     dispatch({
       type: 'RENAME_COLUMN',
-      payload: { boardId: board.id, columnId: activeColumn.id, name },
+      payload: { boardId: columnsBoardId, columnId: activeColumn.id, name },
     });
     dispatch({
       type: 'SET_COLUMN_TYPE',
       payload: {
-        boardId: board.id,
+        boardId: columnsBoardId,
         columnId: activeColumn.id,
         columnType: editColumnType,
       },
@@ -171,7 +191,7 @@ export default function MobileBoard({ onOpenMenu }) {
       dispatch({
         type: 'REORDER_COLUMNS',
         payload: {
-          boardId: board.id,
+          boardId: columnsBoardId,
           columns: pendingOrder.map((id) => byId.get(id)).filter(Boolean),
         },
       });
@@ -228,7 +248,7 @@ export default function MobileBoard({ onOpenMenu }) {
     if (!name) return;
     dispatch({
       type: 'ADD_COLUMN',
-      payload: { boardId: board.id, name, type: newColumnType },
+      payload: { boardId: columnsBoardId, name, type: newColumnType },
     });
     setNewColumnName('');
     setNewColumnType(DEFAULT_COLUMN_TYPE);
@@ -243,7 +263,7 @@ export default function MobileBoard({ onOpenMenu }) {
         })
       : null;
 
-  const movingTask = board.tasks.find((t) => t.id === movingTaskId);
+  const movingTask = allTasks.find((t) => t.id === movingTaskId);
 
   return (
     <div className="mboard">
@@ -277,16 +297,31 @@ export default function MobileBoard({ onOpenMenu }) {
             >
               Add column
             </button>
-            <button
-              type="button"
-              className="mboard-menu-item"
-              onClick={() => {
-                setOpenMenu(null);
-                setShowBoardModal(true);
-              }}
-            >
-              Edit board & sharing
-            </button>
+            {!board.parentBoardId && (
+              <button
+                type="button"
+                className="mboard-menu-item"
+                onClick={() => {
+                  setOpenMenu(null);
+                  setNewSubBoardName('');
+                  setShowSubBoardModal(true);
+                }}
+              >
+                Add sub-board
+              </button>
+            )}
+            {!board.parentBoardId && (
+              <button
+                type="button"
+                className="mboard-menu-item"
+                onClick={() => {
+                  setOpenMenu(null);
+                  setShowBoardModal(true);
+                }}
+              >
+                Edit board & sharing
+              </button>
+            )}
             <div className="mboard-menu-sep" />
             <button
               type="button"
@@ -296,7 +331,7 @@ export default function MobileBoard({ onOpenMenu }) {
                 setConfirm('board');
               }}
             >
-              Delete board
+              {board.parentBoardId ? 'Delete sub-board' : 'Delete board'}
             </button>
           </div>
         )}
@@ -315,7 +350,7 @@ export default function MobileBoard({ onOpenMenu }) {
           >
             {column.name}
             <span className="mboard-tab-count">
-              {board.tasks.filter(
+              {allTasks.filter(
                 (t) => !t.archived && t.columnId === column.id
               ).length}
             </span>
@@ -387,7 +422,7 @@ export default function MobileBoard({ onOpenMenu }) {
                   dispatch({
                     type: 'SET_COLUMN_SORT',
                     payload: {
-                      boardId: board.id,
+                      boardId: columnsBoardId,
                       columnId: activeColumn.id,
                       sortBy: option.value,
                     },
@@ -464,6 +499,17 @@ export default function MobileBoard({ onOpenMenu }) {
                   setShowTaskModal(true);
                 }}
               >
+                {task._sub && (
+                  <span
+                    className="task-subchip"
+                    style={{
+                      backgroundColor: board.color,
+                      color: readableTextOn(board.color),
+                    }}
+                  >
+                    {task._sub}
+                  </span>
+                )}
                 <div className="mboard-task-title-row">
                   <span className="mboard-task-title">{task.title}</span>
                   {isActiveColumn(activeColumn) &&
@@ -594,6 +640,71 @@ export default function MobileBoard({ onOpenMenu }) {
             setEditingTask(null);
           }}
         />
+      )}
+
+      {showSubBoardModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowSubBoardModal(false)}
+        >
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Add sub-board</h3>
+              <button
+                className="modal-close"
+                onClick={() => setShowSubBoardModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-form">
+              <div className="form-group">
+                <label htmlFor="new-sub-board-name">Sub-board name</label>
+                <input
+                  id="new-sub-board-name"
+                  type="text"
+                  value={newSubBoardName}
+                  onChange={(e) => setNewSubBoardName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newSubBoardName.trim()) {
+                      dispatch({
+                        type: 'ADD_SUB_BOARD',
+                        payload: { parentId: board.id, name: newSubBoardName },
+                      });
+                      setShowSubBoardModal(false);
+                    }
+                    if (e.key === 'Escape') setShowSubBoardModal(false);
+                  }}
+                  placeholder="Sub-board name..."
+                  autoFocus
+                />
+              </div>
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setShowSubBoardModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    if (!newSubBoardName.trim()) return;
+                    dispatch({
+                      type: 'ADD_SUB_BOARD',
+                      payload: { parentId: board.id, name: newSubBoardName },
+                    });
+                    setShowSubBoardModal(false);
+                  }}
+                >
+                  Create
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {showColumnModal && (
@@ -810,7 +921,7 @@ export default function MobileBoard({ onOpenMenu }) {
           onConfirm={() => {
             dispatch({
               type: 'DELETE_COLUMN',
-              payload: { boardId: board.id, columnId: activeColumn.id },
+              payload: { boardId: columnsBoardId, columnId: activeColumn.id },
             });
             setConfirm(null);
             setRawColumnId(null);

@@ -381,6 +381,16 @@
   background: var(--active-bg);
 }
 
+/* Sub-boards sit indented under their master, wearing its colour. */
+.board-item.sub-board {
+  margin-left: 18px;
+}
+
+.board-edit-actions .sub-delete {
+  margin-right: auto;
+  color: var(--danger);
+}
+
 .board-dot {
   width: 10px;
   height: 10px;
@@ -513,7 +523,17 @@
   opacity: 1;
 }
 
-.board-item.editing > .board-dot {
+.board-item.editing > /* Sub-boards sit indented under their master, wearing its colour. */
+.board-item.sub-board {
+  margin-left: 18px;
+}
+
+.board-edit-actions .sub-delete {
+  margin-right: auto;
+  color: var(--danger);
+}
+
+.board-dot {
   display: none;
 }
 

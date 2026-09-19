@@ -61,6 +61,13 @@ function statusOnTransfer(sourceColumn, targetColumn) {
   return {};
 }
 
+// Sub-boards store no columns of their own - they always use the master's.
+function columnsOf(board, boards) {
+  if (!board?.parentBoardId) return board?.columns || [];
+  const parent = boards.find((b) => b.id === board.parentBoardId);
+  return parent?.columns || [];
+}
+
 function reducer(state, action) {
   switch (action.type) {
     // ── Theme ──
@@ -140,8 +147,31 @@ function reducer(state, action) {
         activeBoardId: board.id,
       };
     }
+    // A sub-board is a real board that borrows its master's columns and
+    // mirrors its members, colour and project. One level deep only.
+    case 'ADD_SUB_BOARD': {
+      const parent = state.boards.find(
+        (b) => b.id === action.payload.parentId
+      );
+      const name = action.payload.name.trim();
+      if (!parent || parent.parentBoardId || !name) return state;
+      const sub = {
+        id: generateId(),
+        name,
+        color: parent.color,
+        members: parent.members || [],
+        projectId: parent.projectId,
+        groupId: null,
+        parentBoardId: parent.id,
+        columns: [],
+        tasks: [],
+      };
+      return { ...state, boards: [...state.boards, sub] };
+    }
     case 'DELETE_BOARD': {
-      const boards = state.boards.filter((b) => b.id !== action.payload);
+      const boards = state.boards.filter(
+        (b) => b.id !== action.payload && b.parentBoardId !== action.payload
+      );
       return {
         ...state,
         boards,
@@ -173,11 +203,20 @@ function reducer(state, action) {
       };
     }
     case 'UPDATE_BOARD': {
+      const { id, updates } = action.payload;
       return {
         ...state,
-        boards: state.boards.map((b) =>
-          b.id === action.payload.id ? { ...b, ...action.payload.updates } : b
-        ),
+        boards: state.boards.map((b) => {
+          if (b.id === id) return { ...b, ...updates };
+          if (b.parentBoardId !== id) return b;
+          // Sub-boards wear the master's colour, share its collaborators and
+          // follow it between projects.
+          const mirror = {};
+          if ('members' in updates) mirror.members = updates.members;
+          if ('color' in updates) mirror.color = updates.color;
+          if ('projectId' in updates) mirror.projectId = updates.projectId;
+          return Object.keys(mirror).length > 0 ? { ...b, ...mirror } : b;
+        }),
       };
     }
 
@@ -330,7 +369,8 @@ function reducer(state, action) {
         ...state,
         boards: state.boards.map((b) => {
           if (b.id !== boardId) return b;
-          const target = b.columns.find((c) => c.id === targetColumnId);
+          const cols = columnsOf(b, state.boards);
+          const target = cols.find((c) => c.id === targetColumnId);
           return {
             ...b,
             tasks: b.tasks.map((t) =>
@@ -342,7 +382,7 @@ function reducer(state, action) {
                       ? {
                           movedAt: new Date().toISOString(),
                           ...statusOnTransfer(
-                            b.columns.find((c) => c.id === t.columnId),
+                            cols.find((c) => c.id === t.columnId),
                             target
                           ),
                         }
@@ -369,6 +409,7 @@ function reducer(state, action) {
           if (!moving) return b;
 
           const rest = b.tasks.filter((t) => t.id !== taskId);
+          const cols = columnsOf(b, state.boards);
           const moved = {
             ...moving,
             columnId: targetColumnId,
@@ -376,8 +417,8 @@ function reducer(state, action) {
               ? {
                   movedAt: new Date().toISOString(),
                   ...statusOnTransfer(
-                    b.columns.find((c) => c.id === moving.columnId),
-                    b.columns.find((c) => c.id === targetColumnId)
+                    cols.find((c) => c.id === moving.columnId),
+                    cols.find((c) => c.id === targetColumnId)
                   ),
                 }
               : {}),

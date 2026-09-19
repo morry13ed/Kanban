@@ -175,6 +175,11 @@
   background: var(--danger-bg);
 }
 
+.board-menu-sep {
+  border-top: 1px solid var(--border);
+  margin: 3px 6px;
+}
+
 .board-columns {
   display: flex;
   gap: 16px;

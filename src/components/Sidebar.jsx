@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { Fragment, useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { exportState, importState } from '../utils/storage';
@@ -68,6 +68,9 @@ export default function Sidebar({ onCollapse }) {
   const [editingBoardColor, setEditingBoardColor] = useState(BOARD_COLORS[0]);
   const [editingBoardCollaborators, setEditingBoardCollaborators] = useState([]);
   const [editingBoardProjectId, setEditingBoardProjectId] = useState(null);
+  const [addingSubFor, setAddingSubFor] = useState(null);
+  const [newSubName, setNewSubName] = useState('');
+  const [deletingBoard, setDeletingBoard] = useState(null);
   const [projectMoveOpen, setProjectMoveOpen] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -265,6 +268,16 @@ export default function Sidebar({ onCollapse }) {
   const saveEditingBoard = (board) => {
     if (!editingBoardId) return;
     const name = editingBoardName.trim() || board.name;
+    // A sub-board only owns its name - colour, collaborators and project all
+    // mirror the master.
+    if (board.parentBoardId) {
+      dispatch({
+        type: 'UPDATE_BOARD',
+        payload: { id: board.id, updates: { name } },
+      });
+      beginCloseEditor(board.id);
+      return;
+    }
     const members = editingBoardCollaborators
       .map(({ name: n, email, color }) => ({
         name: n.trim(),
@@ -436,23 +449,30 @@ export default function Sidebar({ onCollapse }) {
     const isActive = state.activeBoardId === board.id;
     const isEditing = editingBoardId === board.id;
     const isClosing = closingBoardId === board.id;
-    const openCount = countOpenTasks(board);
+    const isSub = Boolean(board.parentBoardId);
+    const subBoards = isSub
+      ? []
+      : state.boards.filter((sb) => sb.parentBoardId === board.id);
+    const openCount = countOpenTasks(board, state.boards);
 
     return (
+      <Fragment key={board.id}>
       <li
-        key={board.id}
-        className={`board-item ${isActive ? 'active' : ''} ${
-          isEditing || isClosing ? 'editing' : ''
-        }`}
-        onClick={() =>
-          dispatch({ type: 'SET_ACTIVE_BOARD', payload: board.id })
-        }
+        className={`board-item ${isSub ? 'sub-board' : ''} ${
+          isActive ? 'active' : ''
+        } ${isEditing || isClosing ? 'editing' : ''}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          dispatch({ type: 'SET_ACTIVE_BOARD', payload: board.id });
+        }}
       >
         <span className="board-dot" style={{ backgroundColor: board.color }} />
         {isEditing || isClosing ? (
           <div className={`board-editor-well ${isEditing ? 'open' : ''}`}>
           <div className="board-edit-content">
-            <span className="sidebar-mini-label">Board name</span>
+            <span className="sidebar-mini-label">
+              {isSub ? 'Sub-board name' : 'Board name'}
+            </span>
             <div
               className="collab-name-wrap"
               onClick={(e) => e.stopPropagation()}
@@ -463,24 +483,29 @@ export default function Sidebar({ onCollapse }) {
                 onChange={(e) => setEditingBoardName(e.target.value)}
                 className="board-name-input"
               />
-              <button
-                type="button"
-                className="collab-color-dot"
-                style={{ backgroundColor: editingBoardColor }}
-                title="Board colour"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const at = anchorAt(e.currentTarget);
-                  setColorPicking((current) =>
-                    current?.target === 'edit-board'
-                      ? null
-                      : { target: 'edit-board', ...at }
-                  );
-                }}
-              />
-              {colorPicking?.target === 'edit-board' &&
+              {!isSub && (
+                <button
+                  type="button"
+                  className="collab-color-dot"
+                  style={{ backgroundColor: editingBoardColor }}
+                  title="Board colour"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const at = anchorAt(e.currentTarget);
+                    setColorPicking((current) =>
+                      current?.target === 'edit-board'
+                        ? null
+                        : { target: 'edit-board', ...at }
+                    );
+                  }}
+                />
+              )}
+              {!isSub &&
+                colorPicking?.target === 'edit-board' &&
                 renderColorPicker(editingBoardColor, setEditingBoardColor)}
             </div>
+            {!isSub && (
+            <>
             <span className="sidebar-mini-label">Project</span>
             <div
               className="project-field"
@@ -575,7 +600,59 @@ export default function Sidebar({ onCollapse }) {
                 + Add collaborator
               </DashedButton>
             </div>
+            <span className="sidebar-mini-label">Sub-boards</span>
+            <div
+              className="collaborators-section"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {addingSubFor === board.id ? (
+                <input
+                  type="text"
+                  placeholder="Sub-board name..."
+                  value={newSubName}
+                  onChange={(e) => setNewSubName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      dispatch({
+                        type: 'ADD_SUB_BOARD',
+                        payload: { parentId: board.id, name: newSubName },
+                      });
+                      setAddingSubFor(null);
+                      setNewSubName('');
+                    }
+                    if (e.key === 'Escape') setAddingSubFor(null);
+                  }}
+                  autoFocus
+                  className="new-board-input"
+                />
+              ) : (
+                <DashedButton
+                  small
+                  onClick={() => {
+                    setAddingSubFor(board.id);
+                    setNewSubName('');
+                  }}
+                >
+                  + Add sub-board
+                </DashedButton>
+              )}
+            </div>
+            </>
+            )}
             <div className="board-edit-actions">
+              {isSub && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-ghost sub-delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeletingBoard(board);
+                    cancelEditingBoard();
+                  }}
+                >
+                  Delete
+                </button>
+              )}
               <button
                 type="button"
                 className="btn btn-sm btn-ghost"
@@ -626,6 +703,8 @@ export default function Sidebar({ onCollapse }) {
           </button>
         )}
       </li>
+      {subBoards.map(renderBoardRow)}
+      </Fragment>
     );
   };
 
@@ -647,10 +726,12 @@ export default function Sidebar({ onCollapse }) {
           <div className="sidebar-section">
             <div className="sidebar-section-content">
                 {state.projects.map((project) => {
-                  const directBoards = state.boards.filter((b) =>
-                    SHOW_GROUPS
-                      ? b.projectId === project.id && !b.groupId
-                      : b.projectId === project.id
+                  const directBoards = state.boards.filter(
+                    (b) =>
+                      !b.parentBoardId &&
+                      (SHOW_GROUPS
+                        ? b.projectId === project.id && !b.groupId
+                        : b.projectId === project.id)
                   );
                   const projectGroups = SHOW_GROUPS
                     ? state.groups.filter((g) => g.projectId === project.id)
@@ -861,8 +942,11 @@ export default function Sidebar({ onCollapse }) {
                   // Boards shared by someone else point at the owner's
                   // projects; group them here without touching their data.
                   const known = new Set(state.projects.map((p) => p.id));
+                  const boardIds = new Set(state.boards.map((b) => b.id));
                   const sharedBoards = state.boards.filter(
-                    (b) => !known.has(b.projectId)
+                    (b) =>
+                      !known.has(b.projectId) &&
+                      (!b.parentBoardId || !boardIds.has(b.parentBoardId))
                   );
                   if (sharedBoards.length === 0) return null;
                   const isCollapsed = collapsedProjects.has('shared-synthetic');
@@ -957,6 +1041,18 @@ export default function Sidebar({ onCollapse }) {
             </button>
           </div>
         </nav>
+      )}
+
+      {deletingBoard && (
+        <ConfirmDialog
+          title="Delete sub-board"
+          message={`Are you sure you want to delete "${deletingBoard.name}"? This will remove its tasks. The master board is not affected.`}
+          onConfirm={() => {
+            dispatch({ type: 'DELETE_BOARD', payload: deletingBoard.id });
+            setDeletingBoard(null);
+          }}
+          onCancel={() => setDeletingBoard(null)}
+        />
       )}
 
       {deletingProject && (

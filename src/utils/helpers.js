@@ -240,20 +240,38 @@ export function sortTasks(tasks, sortBy) {
   }
 }
 
+// ── Sub-boards ──
+// A sub-board stores no columns; it borrows its master's. One level deep.
+export function boardColumns(board, boards = []) {
+  if (!board?.parentBoardId) return board?.columns || [];
+  const parent = boards.find((b) => b.id === board.parentBoardId);
+  return parent?.columns || [];
+}
+
+export function subBoardsOf(board, boards = []) {
+  if (!board || board.parentBoardId) return [];
+  return boards.filter((b) => b.parentBoardId === board.id);
+}
+
 // Where "Complete" sends a task: the success column (the last one, if
 // several), falling back to the last column for boards without one. Kept as
 // a lookup because columns can be added or reordered after the done column,
 // so "last in the array" is not a safe assumption.
-export function doneColumnOf(board) {
-  const columns = board?.columns || [];
+export function doneColumnOf(board, boards = []) {
+  const columns = boardColumns(board, boards);
   const successes = columns.filter(isSuccessColumn);
   return successes[successes.length - 1] ?? columns[columns.length - 1] ?? null;
 }
 
-export function countOpenTasks(board) {
-  const columns = board.columns || [];
-  const tasks = board.tasks || [];
-  const doneColumnId = columns.length > 1 ? doneColumnOf(board)?.id : null;
+export function countOpenTasks(board, boards = []) {
+  const columns = boardColumns(board, boards);
+  // A master board's count covers its sub-boards too - it is the big picture.
+  const tasks = [
+    ...(board.tasks || []),
+    ...subBoardsOf(board, boards).flatMap((sb) => sb.tasks || []),
+  ];
+  const doneColumnId =
+    columns.length > 1 ? doneColumnOf(board, boards)?.id : null;
 
   return tasks.filter(
     (t) => !t.archived && (doneColumnId == null || t.columnId !== doneColumnId)
