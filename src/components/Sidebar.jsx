@@ -278,6 +278,16 @@ export default function Sidebar({ onCollapse }) {
       beginCloseEditor(board.id);
       return;
     }
+    // A sub-board name still sitting in the editor's input counts: Ok means
+    // "apply everything I typed", not only what was confirmed with Enter.
+    if (addingSubFor === board.id && newSubName.trim()) {
+      dispatch({
+        type: 'ADD_SUB_BOARD',
+        payload: { parentId: board.id, name: newSubName },
+      });
+      setAddingSubFor(null);
+      setNewSubName('');
+    }
     const members = editingBoardCollaborators
       .map(({ name: n, email, color }) => ({
         name: n.trim(),
