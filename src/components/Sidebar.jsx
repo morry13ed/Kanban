@@ -47,6 +47,7 @@ export default function Sidebar({ onCollapse }) {
 
   const [collapsedProjects, setCollapsedProjects] = useState(() => new Set());
   const [collapsedGroups, setCollapsedGroups] = useState(() => new Set());
+  const [collapsedBoards, setCollapsedBoards] = useState(() => new Set());
   const [editingProjectId, setEditingProjectId] = useState(null);
   const [editingProjectName, setEditingProjectName] = useState('');
   const [projectMenuId, setProjectMenuId] = useState(null);
@@ -320,6 +321,7 @@ export default function Sidebar({ onCollapse }) {
   };
   const toggleProject = toggleIn(setCollapsedProjects);
   const toggleGroup = toggleIn(setCollapsedGroups);
+  const toggleBoard = toggleIn(setCollapsedBoards);
 
   const saveProjectName = (project) => {
     const name = editingProjectName.trim();
@@ -463,6 +465,7 @@ export default function Sidebar({ onCollapse }) {
     const subBoards = isSub
       ? []
       : state.boards.filter((sb) => sb.parentBoardId === board.id);
+    const subsCollapsed = collapsedBoards.has(board.id);
     const openCount = countOpenTasks(board, state.boards);
 
     return (
@@ -476,6 +479,19 @@ export default function Sidebar({ onCollapse }) {
           dispatch({ type: 'SET_ACTIVE_BOARD', payload: board.id });
         }}
       >
+        {subBoards.length > 0 && (
+          <button
+            type="button"
+            className="project-toggle board-subs-toggle"
+            title={subsCollapsed ? 'Expand sub-boards' : 'Collapse sub-boards'}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleBoard(board.id);
+            }}
+          >
+            {subsCollapsed ? '▸' : '▾'}
+          </button>
+        )}
         <span className="board-dot" style={{ backgroundColor: board.color }} />
         {isEditing || isClosing ? (
           <div className={`board-editor-well ${isEditing ? 'open' : ''}`}>
@@ -713,7 +729,7 @@ export default function Sidebar({ onCollapse }) {
           </button>
         )}
       </li>
-      {subBoards.map(renderBoardRow)}
+      {!subsCollapsed && subBoards.map(renderBoardRow)}
       </Fragment>
     );
   };

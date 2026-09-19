@@ -386,6 +386,12 @@
   color: var(--danger);
 }
 
+/* Chevron on a board row that has sub-boards; pulls the row's left padding
+   back so the dot stays aligned with dot-only rows. */
+.board-subs-toggle {
+  margin-left: -4px;
+}
+
 /* Sub-boards sit indented under their master, wearing its colour. Smaller
    and bolder than board rows so the two levels read apart. */
 .board-item.sub-board {
