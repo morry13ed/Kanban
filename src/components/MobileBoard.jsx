@@ -19,6 +19,7 @@ import {
 import { fireConfetti } from '../utils/confetti';
 import TaskModal from './TaskModal';
 import ConfirmDialog from './ConfirmDialog';
+import RescheduleDialog from './RescheduleDialog';
 import BoardEditModal from './BoardEditModal';
 import SegmentedControl from './SegmentedControl';
 import {
@@ -55,6 +56,7 @@ export default function MobileBoard({ onOpenMenu }) {
   const orderDragging = useRef(false);
   const [showBoardModal, setShowBoardModal] = useState(false);
   const [showSubBoardModal, setShowSubBoardModal] = useState(false);
+  const [rescheduling, setRescheduling] = useState(null);
   const [newSubBoardName, setNewSubBoardName] = useState('');
   const menusRef = useRef(null);
   const topbarRef = useRef(null);
@@ -144,12 +146,46 @@ export default function MobileBoard({ onOpenMenu }) {
   };
 
   const moveTask = (taskId, targetColumnId) => {
+    // Demoting an auto-activated task asks for a new due date first.
+    const task = allTasks.find((t) => t.id === taskId);
+    const from = columns.find((c) => c.id === task?.columnId);
+    const to = columns.find((c) => c.id === targetColumnId);
+    if (
+      task?.autoActivated &&
+      task.autoActivated === task.dueDate &&
+      isActiveColumn(from) &&
+      to &&
+      !isActiveColumn(to) &&
+      !isSuccessColumn(to)
+    ) {
+      setRescheduling({ taskId, targetColumnId });
+      setMovingTaskId(null);
+      return;
+    }
     celebrateIfSuccess(taskId, targetColumnId);
     dispatch({
       type: 'MOVE_TASK',
       payload: { boardId: ownerOf(taskId), taskId, targetColumnId },
     });
     setMovingTaskId(null);
+  };
+
+  const finishReschedule = (dueDate) => {
+    if (!rescheduling) return;
+    const { taskId, targetColumnId } = rescheduling;
+    dispatch({
+      type: 'UPDATE_TASK',
+      payload: {
+        boardId: ownerOf(taskId),
+        taskId,
+        updates: { dueDate, autoActivated: null },
+      },
+    });
+    dispatch({
+      type: 'MOVE_TASK',
+      payload: { boardId: ownerOf(taskId), taskId, targetColumnId },
+    });
+    setRescheduling(null);
   };
 
   const toggleStatus = (task) => {
@@ -665,6 +701,17 @@ export default function MobileBoard({ onOpenMenu }) {
             setShowTaskModal(false);
             setEditingTask(null);
           }}
+        />
+      )}
+
+      {rescheduling && (
+        <RescheduleDialog
+          initialDate={
+            allTasks.find((t) => t.id === rescheduling.taskId)?.dueDate
+          }
+          onApply={(date) => finishReschedule(date)}
+          onRemove={() => finishReschedule('')}
+          onCancel={() => setRescheduling(null)}
         />
       )}
 

@@ -7,12 +7,14 @@ import {
   DEFAULT_COLUMN_TYPE,
   COLUMN_TYPES,
   isSuccessColumn,
+  isActiveColumn,
   doneColumnOf,
   boardColumns,
   subBoardsOf,
 } from '../utils/helpers';
 import { fireConfetti } from '../utils/confetti';
 import Column from './Column';
+import RescheduleDialog from './RescheduleDialog';
 import SegmentedControl from './SegmentedControl';
 import TaskModal from './TaskModal';
 import ConfirmDialog from './ConfirmDialog';
@@ -29,6 +31,8 @@ export default function Board() {
   const [newColumnType, setNewColumnType] = useState(DEFAULT_COLUMN_TYPE);
   const [draggedTaskId, setDraggedTaskId] = useState(null);
   const [showSubBoardForm, setShowSubBoardForm] = useState(false);
+  // { taskId, targetColumnId, beforeTaskId } - a demote waiting on a new date.
+  const [rescheduling, setRescheduling] = useState(null);
   const [newSubBoardName, setNewSubBoardName] = useState('');
   const [draggedColumnId, setDraggedColumnId] = useState(null);
   const [boardMenuOpen, setBoardMenuOpen] = useState(false);
@@ -191,12 +195,33 @@ export default function Board() {
     );
   };
 
+  // Demoting a task the due date pulled into the active column asks for a
+  // new date first, so the loop stays honest.
+  const needsReschedule = (task, targetColumnId) => {
+    if (!task?.autoActivated || task.autoActivated !== task.dueDate)
+      return false;
+    const from = columns.find((c) => c.id === task.columnId);
+    const to = columns.find((c) => c.id === targetColumnId);
+    return (
+      isActiveColumn(from) && to && !isActiveColumn(to) && !isSuccessColumn(to)
+    );
+  };
+
   const handleMoveTask = (taskId, direction) => {
     const task = allTasks.find((t) => t.id === taskId);
     if (!task) return;
     const colIndex = columns.findIndex((c) => c.id === task.columnId);
     const targetIndex = colIndex + direction;
     if (targetIndex < 0 || targetIndex >= columns.length) return;
+
+    if (needsReschedule(task, columns[targetIndex].id)) {
+      setRescheduling({
+        taskId,
+        targetColumnId: columns[targetIndex].id,
+        beforeTaskId: null,
+      });
+      return;
+    }
 
     celebrateIfSuccess(taskId, columns[targetIndex].id);
     dispatch({
@@ -262,6 +287,16 @@ export default function Board() {
     const anchorOk =
       beforeTaskId && ownerOf(beforeTaskId) === dragged?._boardId;
 
+    if (needsReschedule(dragged, columnId)) {
+      setRescheduling({
+        taskId: draggedTaskId,
+        targetColumnId: columnId,
+        beforeTaskId: anchorOk ? beforeTaskId : null,
+      });
+      setDraggedTaskId(null);
+      return;
+    }
+
     celebrateIfSuccess(draggedTaskId, columnId);
     dispatch({
       type: 'REORDER_TASK',
@@ -297,6 +332,29 @@ export default function Board() {
       type: 'REORDER_COLUMNS',
       payload: { boardId: columnsBoardId, columns: next },
     });
+  };
+
+  const finishReschedule = (dueDate) => {
+    if (!rescheduling) return;
+    const { taskId, targetColumnId, beforeTaskId } = rescheduling;
+    dispatch({
+      type: 'UPDATE_TASK',
+      payload: {
+        boardId: ownerOf(taskId),
+        taskId,
+        updates: { dueDate, autoActivated: null },
+      },
+    });
+    dispatch({
+      type: 'REORDER_TASK',
+      payload: {
+        boardId: ownerOf(taskId),
+        taskId,
+        targetColumnId,
+        beforeTaskId,
+      },
+    });
+    setRescheduling(null);
   };
 
   const handleAddSubBoard = () => {
@@ -476,6 +534,17 @@ export default function Board() {
             setShowTaskModal(false);
             setEditingTask(null);
           }}
+        />
+      )}
+
+      {rescheduling && (
+        <RescheduleDialog
+          initialDate={
+            allTasks.find((t) => t.id === rescheduling.taskId)?.dueDate
+          }
+          onApply={(date) => finishReschedule(date)}
+          onRemove={() => finishReschedule('')}
+          onCancel={() => setRescheduling(null)}
         />
       )}
 

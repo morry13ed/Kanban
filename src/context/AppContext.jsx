@@ -434,6 +434,46 @@ function reducer(state, action) {
         }),
       };
     }
+    // Due dates that have arrived pull their tasks into the (leftmost) active
+    // column, once per due date: the marker remembers which date already
+    // fired, so demoting the task doesn't bounce it straight back. Payload is
+    // today as YYYY-MM-DD; date-only strings compare lexically.
+    case 'AUTO_ACTIVATE_DUE': {
+      const today = action.payload;
+      let changed = false;
+      const boards = state.boards.map((b) => {
+        const cols = columnsOf(b, state.boards);
+        const activeCol = cols.find(isActiveColumn);
+        if (!activeCol) return b;
+        const colById = new Map(cols.map((c) => [c.id, c]));
+        const due = b.tasks.filter((t) => {
+          const col = colById.get(t.columnId);
+          return (
+            !t.archived &&
+            t.dueDate &&
+            t.dueDate <= today &&
+            t.autoActivated !== t.dueDate &&
+            col &&
+            !isActiveColumn(col) &&
+            !isSuccessColumn(col)
+          );
+        });
+        if (due.length === 0) return b;
+        changed = true;
+        const dueIds = new Set(due.map((t) => t.id));
+        // Front of the array = top of the column: these demand attention.
+        const moved = due.map((t) => ({
+          ...t,
+          columnId: activeCol.id,
+          movedAt: new Date().toISOString(),
+          status: STATUS_ACTIVE,
+          autoActivated: t.dueDate,
+        }));
+        return { ...b, tasks: [...moved, ...b.tasks.filter((t) => !dueIds.has(t.id))] };
+      });
+      return changed ? { ...state, boards } : state;
+    }
+
     // Moves a task between a master and its sub-boards. Columns are shared,
     // so the task keeps its column and manual position appends at the end.
     case 'TRANSFER_TASK': {
@@ -622,6 +662,52 @@ export function AppProvider({ children }) {
       mounted = false;
     };
   }, [userId]);
+
+  // ── Due-date auto-activation ──
+  // On load, after midnight, and when the tab comes back: arrived due dates
+  // pull their tasks into the active column. A no-op returns the same state
+  // reference, so quiet runs cost nothing and push nothing.
+  useEffect(() => {
+    if (!hydrated) return;
+    const localToday = () => {
+      const now = new Date();
+      return [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, '0'),
+        String(now.getDate()).padStart(2, '0'),
+      ].join('-');
+    };
+    const run = () =>
+      dispatch({ type: 'AUTO_ACTIVATE_DUE', payload: localToday() });
+
+    const kickoff = setTimeout(run, 0);
+    let midnightTimer;
+    const schedule = () => {
+      const now = new Date();
+      const next = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,
+        0,
+        0,
+        5
+      );
+      midnightTimer = setTimeout(() => {
+        run();
+        schedule();
+      }, next.getTime() - now.getTime());
+    };
+    schedule();
+    const onVisible = () => {
+      if (!document.hidden) run();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearTimeout(kickoff);
+      clearTimeout(midnightTimer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [hydrated]);
 
   // ── Per-board debounced writes, plus deletions ──
   useEffect(() => {
