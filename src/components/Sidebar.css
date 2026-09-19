@@ -381,14 +381,17 @@
   background: var(--active-bg);
 }
 
-/* Sub-boards sit indented under their master, wearing its colour. */
-.board-item.sub-board {
-  margin-left: 18px;
-}
-
 .board-edit-actions .sub-delete {
   margin-right: auto;
   color: var(--danger);
+}
+
+/* Sub-boards sit indented under their master, wearing its colour. Smaller
+   and bolder than board rows so the two levels read apart. */
+.board-item.sub-board {
+  margin-left: 18px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .board-dot {
@@ -523,12 +526,7 @@
   opacity: 1;
 }
 
-.board-item.editing > /* Sub-boards sit indented under their master, wearing its colour. */
-.board-item.sub-board {
-  margin-left: 18px;
-}
-
-.board-edit-actions .sub-delete {
+.board-item.editing > .board-edit-actions .sub-delete {
   margin-right: auto;
   color: var(--danger);
 }
