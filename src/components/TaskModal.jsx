@@ -187,9 +187,59 @@ export default function TaskModal({
     addFiles(images);
   };
 
+  // Removals are soft until the modal closes: each one leaves an undo line
+  // in the attachments row instead of demanding a confirmation up front.
+  const [removed, setRemoved] = useState([]);
+
   const removeAttachment = (id) => {
+    const index = attachments.findIndex((a) => a.id === id);
+    if (index === -1) return;
+    const file = attachments[index];
+    setRemoved((r) => [
+      ...r,
+      { key: `f-${id}-${Date.now()}`, kind: 'file', label: file.name, file, index },
+    ]);
     setAttachments((current) => current.filter((a) => a.id !== id));
     setAttachError('');
+  };
+
+  const removeLink = (link) => {
+    const before = description;
+    const after = before
+      .replace(link.url, '')
+      .replace(/[ \t]{2,}/g, ' ')
+      .trim();
+    setDescription(after);
+    setRemoved((r) => [
+      ...r,
+      {
+        key: `l-${Date.now()}`,
+        kind: 'link',
+        label: link.name,
+        url: link.url,
+        before,
+        after,
+      },
+    ]);
+  };
+
+  const undoRemoval = (entry) => {
+    if (entry.kind === 'file') {
+      setAttachments((current) => {
+        const next = [...current];
+        next.splice(Math.min(entry.index, next.length), 0, entry.file);
+        return next;
+      });
+    } else {
+      // Untouched since the removal: put the text back exactly. Edited in
+      // the meantime: append the link instead of clobbering the edits.
+      setDescription((current) =>
+        current === entry.after
+          ? entry.before
+          : `${current} ${entry.url}`.trim()
+      );
+    }
+    setRemoved((r) => r.filter((e) => e.key !== entry.key));
   };
 
   const assigneeOptions = ['Unassigned', ...members];
@@ -313,7 +363,9 @@ export default function TaskModal({
             {attachError && (
               <span className="attachment-error">{attachError}</span>
             )}
-            {(attachments.length > 0 || descDocLinks.length > 0) && (
+            {(attachments.length > 0 ||
+              descDocLinks.length > 0 ||
+              removed.length > 0) && (
               <div className="attach-row">
                 <span className="attach-row-label">Attachments</span>
                 <div className="attach-pills">
@@ -371,20 +423,25 @@ export default function TaskModal({
                         type="button"
                         className="attach-pill-remove"
                         title="Remove this link from the description"
-                        onClick={() =>
-                          setDescription((current) =>
-                            current
-                              .replace(link.url, '')
-                              .replace(/[ \t]{2,}/g, ' ')
-                              .trim()
-                          )
-                        }
+                        onClick={() => removeLink(link)}
                       >
                         ×
                       </button>
                     </span>
                   ))}
                 </div>
+                {removed.map((entry) => (
+                  <div key={entry.key} className="attach-undo">
+                    Removed {entry.label}
+                    <button
+                      type="button"
+                      className="attach-undo-btn"
+                      onClick={() => undoRemoval(entry)}
+                    >
+                      Undo
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>

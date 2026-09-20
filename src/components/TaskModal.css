@@ -440,6 +440,30 @@
   flex-shrink: 0;
 }
 
+/* Soft-delete receipt with its way back. */
+.attach-undo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.attach-undo-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.attach-undo-btn:hover {
+  text-decoration: underline;
+}
+
 /* ── Image viewer ── */
 .lightbox {
   position: fixed;
