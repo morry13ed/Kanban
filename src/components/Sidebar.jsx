@@ -8,6 +8,7 @@ import {
   countOpenTasks,
 } from '../utils/helpers';
 import ColorPicker from './ColorPicker';
+import { TrashIcon } from './icons';
 import ConfirmDialog from './ConfirmDialog';
 import DashedButton from './DashedButton';
 import './Sidebar.css';
@@ -672,13 +673,14 @@ export default function Sidebar({ onCollapse }) {
                 <button
                   type="button"
                   className="btn btn-sm btn-ghost sub-delete"
+                  title="Delete sub-board"
                   onClick={(e) => {
                     e.stopPropagation();
                     setDeletingBoard(board);
                     cancelEditingBoard();
                   }}
                 >
-                  Delete
+                  <TrashIcon />
                 </button>
               )}
               <button

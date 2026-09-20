@@ -383,7 +383,25 @@
 
 .board-edit-actions .sub-delete {
   margin-right: auto;
+  display: inline-flex;
+  align-items: center;
   color: var(--danger);
+}
+
+.trash-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* While editing, the indent scaffolding (chevron slot, sub indent) gets out
+   of the way so the editor well can use the row's full width. */
+.board-item.editing .board-toggle-spacer,
+.board-item.editing .board-subs-toggle {
+  display: none;
+}
+
+.board-item.sub-board.editing {
+  margin-left: 0;
 }
 
 /* Every board row reserves the same slot before its dot: the chevron when
