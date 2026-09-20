@@ -423,6 +423,13 @@
   font-weight: 600;
 }
 
+/* A quieter, smaller dot for the sub level, still centred in its column. */
+.board-item.sub-board .board-dot {
+  width: 6px;
+  height: 6px;
+  margin: 0 2px;
+}
+
 .board-dot {
   width: 10px;
   height: 10px;
