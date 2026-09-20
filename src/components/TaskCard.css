@@ -169,12 +169,19 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* A single image or document is a shortcut straight from the card. */
+/* A single image or document is a shortcut straight from the card. The
+   zero-width space gives the icon-only chip a text line box, so every chip
+   in the row computes the exact same height. */
 button.task-filechip {
   border: none;
   cursor: pointer;
   font-family: inherit;
   font-weight: 500;
+  line-height: 1.5;
+}
+
+button.task-filechip::after {
+  content: '\200B';
 }
 
 button.task-filechip:hover {

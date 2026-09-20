@@ -321,7 +321,9 @@ export default function TaskModal({
                     <span key={file.id} className="attach-pill">
                       <button
                         type="button"
-                        className="attach-pill-open"
+                        className={`attach-pill-open ${
+                          isImage(file.type) ? 'image' : ''
+                        }`}
                         title={file.name}
                         onClick={() =>
                           isImage(file.type)
@@ -329,8 +331,18 @@ export default function TaskModal({
                             : openAttachment(file)
                         }
                       >
-                        {isImage(file.type) ? <ImgIcon /> : <DocIcon />}
-                        {shortName(file.name)}
+                        {isImage(file.type) ? (
+                          <img
+                            className="attach-pill-thumb"
+                            src={file.dataUrl}
+                            alt={file.name}
+                          />
+                        ) : (
+                          <>
+                            <DocIcon />
+                            {shortName(file.name)}
+                          </>
+                        )}
                       </button>
                       <button
                         type="button"

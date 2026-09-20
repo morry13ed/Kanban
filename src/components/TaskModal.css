@@ -367,15 +367,18 @@
 .attach-pill {
   display: inline-flex;
   align-items: center;
+  height: 28px;
   background: var(--hover);
   border-radius: 6px;
+  overflow: hidden;
 }
 
 .attach-pill-open {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 8px;
+  height: 100%;
+  padding: 0 8px;
   border: none;
   background: none;
   color: var(--text-primary);
@@ -383,7 +386,18 @@
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  border-radius: 6px;
+}
+
+/* Image pills show the picture itself instead of a name. */
+.attach-pill-open.image {
+  padding: 0;
+}
+
+.attach-pill-thumb {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  display: block;
 }
 
 .attach-pill-open:hover {
