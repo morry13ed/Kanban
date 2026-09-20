@@ -11,6 +11,7 @@ import {
   doneColumnOf,
   boardColumns,
   subBoardsOf,
+  dueHasArrived,
 } from '../utils/helpers';
 import { fireConfetti } from '../utils/confetti';
 import Column from './Column';
@@ -165,8 +166,7 @@ export default function Board() {
         // Demoting an auto-activated task without having changed its due
         // date in this same edit still asks for a new date.
         const demoting =
-          editingTask.autoActivated &&
-          editingTask.autoActivated === editingTask.dueDate &&
+          dueHasArrived(editingTask.dueDate) &&
           fields.dueDate === editingTask.dueDate &&
           isActiveColumn(from) &&
           to &&
@@ -236,8 +236,7 @@ export default function Board() {
   // Demoting a task the due date pulled into the active column asks for a
   // new date first, so the loop stays honest.
   const needsReschedule = (task, targetColumnId) => {
-    if (!task?.autoActivated || task.autoActivated !== task.dueDate)
-      return false;
+    if (!dueHasArrived(task?.dueDate)) return false;
     const from = columns.find((c) => c.id === task.columnId);
     const to = columns.find((c) => c.id === targetColumnId);
     return (

@@ -240,6 +240,20 @@ export function sortTasks(tasks, sortBy) {
   }
 }
 
+// Date-only strings compare lexically; "arrived" means today or earlier.
+export function localToday() {
+  const now = new Date();
+  return [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+export function dueHasArrived(dueDate) {
+  return Boolean(dueDate) && dueDate <= localToday();
+}
+
 // ── Sub-boards ──
 // A sub-board stores no columns; it borrows its master's. One level deep.
 export function boardColumns(board, boards = []) {

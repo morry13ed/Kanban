@@ -6,6 +6,7 @@ import {
   isActiveColumn,
   boardColumns,
   subBoardsOf,
+  dueHasArrived,
   DEFAULT_SORT,
   DEFAULT_COLUMN_TYPE,
   COLUMN_TYPES,
@@ -152,8 +153,7 @@ export default function MobileBoard({ onOpenMenu }) {
     const from = columns.find((c) => c.id === task?.columnId);
     const to = columns.find((c) => c.id === targetColumnId);
     if (
-      task?.autoActivated &&
-      task.autoActivated === task.dueDate &&
+      dueHasArrived(task?.dueDate) &&
       isActiveColumn(from) &&
       to &&
       !isActiveColumn(to) &&
@@ -230,8 +230,7 @@ export default function MobileBoard({ onOpenMenu }) {
         const from = columns.find((c) => c.id === editingTask.columnId);
         const to = columns.find((c) => c.id === newColumnId);
         const demoting =
-          editingTask.autoActivated &&
-          editingTask.autoActivated === editingTask.dueDate &&
+          dueHasArrived(editingTask.dueDate) &&
           fields.dueDate === editingTask.dueDate &&
           isActiveColumn(from) &&
           to &&
