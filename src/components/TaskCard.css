@@ -169,6 +169,23 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* A single image or document is a shortcut straight from the card. */
+button.task-filechip {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+button.task-filechip:hover {
+  color: var(--accent);
+}
+
+.task-attachments .file-icon {
+  width: 11px;
+  height: 11px;
+}
+
 .clip-icon {
   width: 11px;
   height: 11px;

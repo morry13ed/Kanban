@@ -16,7 +16,11 @@ import {
   fileToAttachment,
   imageFilesFromPaste,
   isImage,
+  docLinksFrom,
+  shortName,
+  openAttachment,
 } from '../utils/attachments';
+import { DocIcon, ImgIcon } from './icons';
 import './TaskModal.css';
 
 function ImagePlusIcon() {
@@ -37,11 +41,6 @@ function ImagePlusIcon() {
       <path d="M16.5 6.2v5.6M13.7 9h5.6" />
     </svg>
   );
-}
-
-function FileGlyph({ name }) {
-  const ext = (name.split('.').pop() || '').slice(0, 4).toUpperCase();
-  return <span className="attachment-ext">{ext || 'FILE'}</span>;
 }
 
 function ChevronIcon() {
@@ -195,6 +194,7 @@ export default function TaskModal({
 
   const assigneeOptions = ['Unassigned', ...members];
   const score = getPriority({ impact, time, demand });
+  const descDocLinks = docLinksFrom(description);
 
   // An arrived due date on a regular column means the task will be pulled
   // into the active column on save - say so before it happens.
@@ -291,34 +291,6 @@ export default function TaskModal({
               />
 
               <div className="attachment-bar">
-                {attachments.map((file) => (
-                  <span key={file.id} className="attachment-thumb">
-                    {isImage(file.type) ? (
-                      <button
-                        type="button"
-                        className="attachment-open"
-                        title={`Open ${file.name}`}
-                        onClick={() => setPreview(file)}
-                      >
-                        <img src={file.dataUrl} alt={file.name} />
-                      </button>
-                    ) : (
-                      <FileGlyph name={file.name} />
-                    )}
-                    <button
-                      type="button"
-                      className="attachment-remove"
-                      title={`Remove ${file.name}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeAttachment(file.id);
-                      }}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-
                 <button
                   type="button"
                   className="attachment-add"
@@ -340,6 +312,53 @@ export default function TaskModal({
             </div>
             {attachError && (
               <span className="attachment-error">{attachError}</span>
+            )}
+            {(attachments.length > 0 || descDocLinks.length > 0) && (
+              <div className="attach-row">
+                <span className="attach-row-label">Attachments</span>
+                <div className="attach-pills">
+                  {attachments.map((file) => (
+                    <span key={file.id} className="attach-pill">
+                      <button
+                        type="button"
+                        className="attach-pill-open"
+                        title={file.name}
+                        onClick={() =>
+                          isImage(file.type)
+                            ? setPreview(file)
+                            : openAttachment(file)
+                        }
+                      >
+                        {isImage(file.type) ? <ImgIcon /> : <DocIcon />}
+                        {shortName(file.name)}
+                      </button>
+                      <button
+                        type="button"
+                        className="attach-pill-remove"
+                        title={`Remove ${file.name}`}
+                        onClick={() => removeAttachment(file.id)}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                  {descDocLinks.map((link, idx) => (
+                    <span key={`link-${idx}`} className="attach-pill">
+                      <button
+                        type="button"
+                        className="attach-pill-open"
+                        title={link.url}
+                        onClick={() =>
+                          window.open(link.url, '_blank', 'noopener')
+                        }
+                      >
+                        <DocIcon />
+                        {shortName(link.name)}
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 

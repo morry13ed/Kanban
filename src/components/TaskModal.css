@@ -344,6 +344,72 @@
   display: inline-flex;
 }
 
+/* ── Attachments row below the description ── */
+.attach-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.attach-row-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.attach-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.attach-pill {
+  display: inline-flex;
+  align-items: center;
+  background: var(--hover);
+  border-radius: 6px;
+}
+
+.attach-pill-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.attach-pill-open:hover {
+  color: var(--accent);
+}
+
+.attach-pill-remove {
+  padding: 4px 7px 4px 2px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.attach-pill-remove:hover {
+  color: var(--danger);
+}
+
+.file-icon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
 /* ── Image viewer ── */
 .lightbox {
   position: fixed;

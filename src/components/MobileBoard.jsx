@@ -28,11 +28,13 @@ import {
   BugIcon,
   PlayIcon,
   PauseIcon,
-  ClipIcon,
   BulbIcon,
   GaugeIcon,
   TrashIcon,
+  DocIcon,
+  ImgIcon,
 } from './icons';
+import { isImage, docLinksFrom } from '../utils/attachments';
 import './MobileBoard.css';
 
 // One column at a time, switched by tabs - the phone replacement for
@@ -663,12 +665,30 @@ export default function MobileBoard({ onOpenMenu }) {
                       {formatDate(task.dueDate)}
                     </span>
                   )}
-                  {(task.attachments?.length ?? 0) > 0 && (
-                    <span className="task-attachments">
-                      <ClipIcon />
-                      {task.attachments.length}
-                    </span>
-                  )}
+                  {(() => {
+                    const imgs = (task.attachments || []).filter((a) =>
+                      isImage(a.type)
+                    );
+                    const docs =
+                      (task.attachments || []).filter((a) => !isImage(a.type))
+                        .length + docLinksFrom(task.description).length;
+                    return (
+                      <>
+                        {imgs.length > 0 && (
+                          <span className="task-attachments">
+                            <ImgIcon />
+                            {imgs.length > 1 ? imgs.length : ''}
+                          </span>
+                        )}
+                        {docs > 0 && (
+                          <span className="task-attachments">
+                            <DocIcon />
+                            {docs > 1 ? docs : ''}
+                          </span>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
               {isActiveColumn(activeColumn) && (

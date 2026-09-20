@@ -11,10 +11,17 @@ import {
   BugIcon,
   PlayIcon,
   PauseIcon,
-  ClipIcon,
   BulbIcon,
   GaugeIcon,
+  DocIcon,
+  ImgIcon,
 } from './icons';
+import {
+  isImage,
+  docLinksFrom,
+  shortName,
+  openAttachment,
+} from '../utils/attachments';
 import './TaskCard.css';
 
 
@@ -52,8 +59,24 @@ export default function TaskCard({
     setTitleDraft(task.title);
   }, [task.title]);
 
-  const attachmentCount = task.attachments?.length ?? 0;
+  // Images and documents (uploads plus Google links in the description)
+  // read apart on the card: one of a kind is a direct shortcut, several
+  // collapse to a count and the card click shows them all.
+  const images = (task.attachments || []).filter((a) => isImage(a.type));
+  const docFiles = (task.attachments || []).filter((a) => !isImage(a.type));
+  const docLinks = docLinksFrom(task.description);
+  const docCount = docFiles.length + docLinks.length;
+  const [imagePreview, setImagePreview] = useState(null);
   const status = task.status;
+
+  const openSingleDoc = (e) => {
+    e.stopPropagation();
+    if (docLinks.length === 1 && docFiles.length === 0) {
+      window.open(docLinks[0].url, '_blank', 'noopener');
+    } else if (docFiles.length === 1 && docLinks.length === 0) {
+      openAttachment(docFiles[0]);
+    }
+  };
 
   // Click flips active <-> paused without a trip through the modal. Turning
   // the hint off entirely lives in the edit dialog.
@@ -240,15 +263,40 @@ export default function TaskCard({
             {formatDate(task.dueDate)}
           </span>
         )}
-        {attachmentCount > 0 && (
-          <span
-            className="task-attachments"
-            title={`${attachmentCount} attachment${
-              attachmentCount === 1 ? '' : 's'
-            }`}
+        {images.length === 1 && (
+          <button
+            type="button"
+            className="task-attachments task-filechip"
+            title={images[0].name}
+            onClick={(e) => {
+              e.stopPropagation();
+              setImagePreview(images[0]);
+            }}
           >
-            <ClipIcon />
-            {attachmentCount}
+            <ImgIcon />
+          </button>
+        )}
+        {images.length > 1 && (
+          <span className="task-attachments" title={`${images.length} images`}>
+            <ImgIcon />
+            {images.length}
+          </span>
+        )}
+        {docCount === 1 && (
+          <button
+            type="button"
+            className="task-attachments task-filechip"
+            title={docFiles[0]?.name ?? docLinks[0]?.url}
+            onClick={openSingleDoc}
+          >
+            <DocIcon />
+            {shortName(docFiles[0]?.name ?? docLinks[0]?.name)}
+          </button>
+        )}
+        {docCount > 1 && (
+          <span className="task-attachments" title={`${docCount} documents`}>
+            <DocIcon />
+            {docCount}
           </span>
         )}
       </div>
@@ -298,6 +346,33 @@ export default function TaskCard({
           🗑
         </button>
       </div>
+
+      {imagePreview && (
+        <div
+          className="lightbox"
+          onClick={(e) => {
+            e.stopPropagation();
+            setImagePreview(null);
+          }}
+        >
+          <img
+            src={imagePreview.dataUrl}
+            alt={imagePreview.name}
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            type="button"
+            className="lightbox-close"
+            title="Close"
+            onClick={(e) => {
+              e.stopPropagation();
+              setImagePreview(null);
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {inActiveColumn && (
         <div

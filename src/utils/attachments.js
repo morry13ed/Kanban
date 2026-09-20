@@ -1,7 +1,8 @@
 import { generateId } from './helpers';
 
 export const ACCEPTED_TYPES =
-  'image/png,image/jpeg,image/webp,image/gif,image/avif,image/heic,application/pdf';
+  'image/png,image/jpeg,image/webp,image/gif,image/avif,image/heic,application/pdf,' +
+  'application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.doc,.docx';
 
 // Attachments live inside the task, which lives inside the one localStorage
 // blob that gets rewritten on every edit. Photos straight off a phone would
@@ -15,6 +16,61 @@ const REENCODE_EXEMPT = ['image/gif', 'image/svg+xml'];
 
 export function isImage(type) {
   return typeof type === 'string' && type.startsWith('image/');
+}
+
+// Anything uploaded that isn't an image counts as a document.
+export function isDocFile(attachment) {
+  return !isImage(attachment?.type);
+}
+
+// Google links in a description count as documents too.
+const GOOGLE_DOC_RE =
+  /https?:\/\/(?:docs|drive|sheets|slides)\.google\.com\/[^\s)>'"]+/g;
+
+const GOOGLE_LABELS = [
+  ['/document/', 'Doc'],
+  ['/spreadsheets/', 'Sheet'],
+  ['/presentation/', 'Slides'],
+  ['/forms/', 'Form'],
+];
+
+export function docLinksFrom(text) {
+  if (!text) return [];
+  const matches = text.match(GOOGLE_DOC_RE) || [];
+  return matches.map((url) => ({
+    url,
+    name:
+      GOOGLE_LABELS.find(([part]) => url.includes(part))?.[1] ??
+      'Drive',
+  }));
+}
+
+// A pill's label: the file name, at most 8 characters.
+export function shortName(name) {
+  const base = String(name || '');
+  return base.length > 8 ? base.slice(0, 8) + '…' : base;
+}
+
+// data: URLs can't be opened as a top-level page, so hand the browser a
+// blob URL instead. PDFs open in a tab; other types download.
+export function openAttachment(attachment) {
+  const dataUrl = attachment?.dataUrl;
+  if (!dataUrl) return;
+  const [meta, base64] = dataUrl.split(',');
+  const mime = meta.slice(meta.indexOf(':') + 1, meta.indexOf(';'));
+  const bytes = atob(base64);
+  const buf = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i += 1) buf[i] = bytes.charCodeAt(i);
+  const blobUrl = URL.createObjectURL(new Blob([buf], { type: mime }));
+  if (mime === 'application/pdf') {
+    window.open(blobUrl, '_blank', 'noopener');
+  } else {
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = attachment.name || 'attachment';
+    a.click();
+  }
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
 }
 
 export function formatBytes(bytes) {
