@@ -15,6 +15,7 @@ import {
 import { fireConfetti } from '../utils/confetti';
 import Column from './Column';
 import RescheduleDialog from './RescheduleDialog';
+import { TrashIcon } from './icons';
 import SegmentedControl from './SegmentedControl';
 import TaskModal from './TaskModal';
 import ConfirmDialog from './ConfirmDialog';
@@ -430,6 +431,7 @@ export default function Board() {
                     setShowDeleteConfirm(true);
                   }}
                 >
+                  <TrashIcon />
                   {board.parentBoardId ? 'Delete sub-board' : 'Delete board'}
                 </button>
               </div>

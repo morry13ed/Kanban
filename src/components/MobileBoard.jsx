@@ -29,6 +29,7 @@ import {
   ClipIcon,
   BulbIcon,
   GaugeIcon,
+  TrashIcon,
 } from './icons';
 import './MobileBoard.css';
 
@@ -389,7 +390,10 @@ export default function MobileBoard({ onOpenMenu }) {
                 setConfirm('board');
               }}
             >
-              {board.parentBoardId ? 'Delete sub-board' : 'Delete board'}
+              <span className="mboard-menu-item-inner">
+                <TrashIcon />
+                {board.parentBoardId ? 'Delete sub-board' : 'Delete board'}
+              </span>
             </button>
           </div>
         )}
@@ -524,7 +528,10 @@ export default function MobileBoard({ onOpenMenu }) {
                 setConfirm('column');
               }}
             >
-              Delete column
+              <span className="mboard-menu-item-inner">
+                <TrashIcon />
+                Delete column
+              </span>
             </button>
           </div>
         )}

@@ -103,3 +103,29 @@ export function TrashIcon() {
     </svg>
   );
 }
+
+// Material Symbols "swap_vert" / "add" / "more_vert" - the column header
+// trio, drawn light to sit quietly next to each other.
+export function SwapVertIcon() {
+  return (
+    <svg className="col-icon" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+      <path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z" />
+    </svg>
+  );
+}
+
+export function AddIcon() {
+  return (
+    <svg className="col-icon" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+      <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+    </svg>
+  );
+}
+
+export function MoreVertIcon() {
+  return (
+    <svg className="col-icon" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+      <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+    </svg>
+  );
+}

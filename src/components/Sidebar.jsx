@@ -860,6 +860,7 @@ export default function Sidebar({ onCollapse }) {
                                   setDeletingProject(project);
                                 }}
                               >
+                                <TrashIcon />
                                 Delete project
                               </button>
                             </div>

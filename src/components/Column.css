@@ -218,8 +218,11 @@
   color: var(--danger);
 }
 
-.column-action-btn.active {
-  color: var(--accent);
+/* One quiet colour for the whole header trio; the sort tooltip says when a
+   column is sorted. */
+.col-icon {
+  width: 17px;
+  height: 17px;
 }
 
 /* ── Sort menu ── */
@@ -276,6 +279,16 @@
 
 .column-sort-item.active {
   color: var(--accent);
+}
+
+.column-sort-item.danger {
+  justify-content: flex-start;
+  gap: 6px;
+  color: var(--danger);
+}
+
+.column-sort-item.danger:hover {
+  background: var(--danger-bg);
 }
 
 .column-sort-check {

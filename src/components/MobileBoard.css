@@ -225,6 +225,14 @@
   color: var(--danger);
 }
 
+/* Icon + label pair inside a menu item, kept together despite the item's
+   space-between layout. */
+.mboard-menu-item-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* ── Task list ── */
 .mboard-tasks {
   list-style: none;

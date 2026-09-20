@@ -10,6 +10,7 @@ import {
   isSuccessColumn,
 } from '../utils/helpers';
 import SegmentedControl from './SegmentedControl';
+import { SwapVertIcon, AddIcon, MoreVertIcon, TrashIcon } from './icons';
 import TaskCard from './TaskCard';
 import ConfirmDialog from './ConfirmDialog';
 import './Column.css';
@@ -41,6 +42,19 @@ export default function Column({
   const [editing, setEditing] = useState(false);
   const [columnName, setColumnName] = useState(column.name);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showColumnMenu, setShowColumnMenu] = useState(false);
+  const columnMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!showColumnMenu) return;
+    const close = (e) => {
+      if (columnMenuRef.current && !columnMenuRef.current.contains(e.target)) {
+        setShowColumnMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [showColumnMenu]);
   const [dragOver, setDragOver] = useState(false);
   const [columnEdge, setColumnEdge] = useState(null);
   const [showSortMenu, setShowSortMenu] = useState(false);
@@ -283,9 +297,7 @@ export default function Column({
         <div className="column-actions">
           <div className="column-sort" ref={sortRef}>
             <button
-              className={`column-action-btn ${
-                sortBy !== DEFAULT_SORT ? 'active' : ''
-              }`}
+              className="column-action-btn"
               onClick={() => setShowSortMenu((open) => !open)}
               title={
                 sortBy === DEFAULT_SORT
@@ -293,7 +305,7 @@ export default function Column({
                   : `Sorted by ${activeSort.label.toLowerCase()}`
               }
             >
-              ⇅
+              <SwapVertIcon />
             </button>
 
             {showSortMenu && (
@@ -322,15 +334,31 @@ export default function Column({
             onClick={onAddTask}
             title="Add task"
           >
-            +
+            <AddIcon />
           </button>
-          <button
-            className="column-action-btn danger"
-            onClick={() => setShowDeleteConfirm(true)}
-            title="Delete column"
-          >
-            ×
-          </button>
+          <div className="column-sort" ref={columnMenuRef}>
+            <button
+              className="column-action-btn"
+              onClick={() => setShowColumnMenu((open) => !open)}
+              title="Column options"
+            >
+              <MoreVertIcon />
+            </button>
+            {showColumnMenu && (
+              <div className="column-sort-menu">
+                <button
+                  className="column-sort-item danger"
+                  onClick={() => {
+                    setShowColumnMenu(false);
+                    setShowDeleteConfirm(true);
+                  }}
+                >
+                  <TrashIcon />
+                  Delete column
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
