@@ -367,6 +367,21 @@ export default function TaskModal({
                         <DocIcon />
                         {shortName(link.name)}
                       </button>
+                      <button
+                        type="button"
+                        className="attach-pill-remove"
+                        title="Remove this link from the description"
+                        onClick={() =>
+                          setDescription((current) =>
+                            current
+                              .replace(link.url, '')
+                              .replace(/[ \t]{2,}/g, ' ')
+                              .trim()
+                          )
+                        }
+                      >
+                        ×
+                      </button>
                     </span>
                   ))}
                 </div>
