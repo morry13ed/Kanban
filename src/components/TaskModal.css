@@ -361,16 +361,19 @@
 .attach-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
+  /* Headroom for the remove badges hanging off the corners. */
+  padding-top: 6px;
+  margin-top: -6px;
 }
 
 .attach-pill {
+  position: relative;
   display: inline-flex;
   align-items: center;
   height: 28px;
   background: var(--hover);
   border-radius: 6px;
-  overflow: hidden;
 }
 
 .attach-pill-open {
@@ -398,24 +401,37 @@
   height: 28px;
   object-fit: cover;
   display: block;
+  border-radius: 6px;
 }
 
 .attach-pill-open:hover {
   color: var(--accent);
 }
 
+/* Remove is a round badge hanging slightly off the pill's corner, shown
+   on hover - images and docs alike. */
 .attach-pill-remove {
-  padding: 4px 7px 4px 2px;
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 2;
+  width: 16px;
+  height: 16px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: none;
-  background: none;
-  color: var(--text-secondary);
-  font-size: 12px;
+  border-radius: 50%;
+  background: var(--danger);
+  color: white;
+  font-size: 11px;
   line-height: 1;
   cursor: pointer;
 }
 
-.attach-pill-remove:hover {
-  color: var(--danger);
+.attach-pill:hover .attach-pill-remove {
+  display: inline-flex;
 }
 
 .file-icon {
