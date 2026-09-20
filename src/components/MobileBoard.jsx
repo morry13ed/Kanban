@@ -7,6 +7,7 @@ import {
   boardColumns,
   subBoardsOf,
   dueHasArrived,
+  localToday,
   DEFAULT_SORT,
   DEFAULT_COLUMN_TYPE,
   COLUMN_TYPES,
@@ -256,6 +257,9 @@ export default function MobileBoard({ onOpenMenu }) {
         payload: { boardId: targetBoardId ?? board.id, ...data },
       });
     }
+    // Apply the due-date rule right away instead of waiting for the next
+    // load: an arrived date in a regular column goes straight to active.
+    dispatch({ type: 'AUTO_ACTIVATE_DUE', payload: localToday() });
     setShowTaskModal(false);
     setEditingTask(null);
   };

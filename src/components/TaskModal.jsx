@@ -8,6 +8,8 @@ import {
   formatLevel,
   STATUS_NONE,
   isActiveColumn,
+  isSuccessColumn,
+  dueHasArrived,
 } from '../utils/helpers';
 import {
   ACCEPTED_TYPES,
@@ -193,6 +195,17 @@ export default function TaskModal({
 
   const assigneeOptions = ['Unassigned', ...members];
   const score = getPriority({ impact, time, demand });
+
+  // An arrived due date on a regular column means the task will be pulled
+  // into the active column on save - say so before it happens.
+  const activeColumnOnBoard = columns.find(isActiveColumn);
+  const pickedColumn = columns.find((c) => c.id === columnId);
+  const willAutoActivate =
+    Boolean(activeColumnOnBoard) &&
+    pickedColumn &&
+    !isActiveColumn(pickedColumn) &&
+    !isSuccessColumn(pickedColumn) &&
+    dueHasArrived(dueDate);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -414,6 +427,13 @@ export default function TaskModal({
             </div>
           </div>
           </div>
+
+          {willAutoActivate && (
+            <p className="auto-activate-hint">
+              This date has arrived — the task will start in{' '}
+              {activeColumnOnBoard.name}.
+            </p>
+          )}
 
           <div className="form-row">
             <div className="form-group">

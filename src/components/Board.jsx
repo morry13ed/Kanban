@@ -12,6 +12,7 @@ import {
   boardColumns,
   subBoardsOf,
   dueHasArrived,
+  localToday,
 } from '../utils/helpers';
 import { fireConfetti } from '../utils/confetti';
 import Column from './Column';
@@ -196,6 +197,9 @@ export default function Board() {
         payload: { boardId: targetBoardId ?? board.id, ...taskData },
       });
     }
+    // Apply the due-date rule right away instead of waiting for the next
+    // load: an arrived date in a regular column goes straight to active.
+    dispatch({ type: 'AUTO_ACTIVATE_DUE', payload: localToday() });
     setShowTaskModal(false);
     setEditingTask(null);
   };

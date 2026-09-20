@@ -543,6 +543,14 @@
   flex: 1;
 }
 
+/* Quiet heads-up under the column picker when an arrived due date will
+   land the task in the active column. */
+.auto-activate-hint {
+  margin: -8px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
 /* The bug/feature checks share the description's label line. */
 .desc-label-row {
   display: flex;
