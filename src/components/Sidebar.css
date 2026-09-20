@@ -420,7 +420,15 @@
 .board-item.sub-board {
   margin-left: 20px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 400;
+  /* A touch quieter than board rows: nudged toward the background, which
+     reads lighter in light mode and darker in dark mode. */
+  color: color-mix(in srgb, var(--text-secondary) 82%, var(--sidebar-bg));
+}
+
+.board-item.sub-board:hover,
+.board-item.sub-board.active {
+  color: var(--text-primary);
 }
 
 /* A quieter, smaller dot for the sub level, still centred in its column. */
