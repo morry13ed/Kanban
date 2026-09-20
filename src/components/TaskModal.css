@@ -543,15 +543,11 @@
   flex: 1;
 }
 
-/* Board picker and the bug/feature checks share one row; the checks sit on
-   the input's baseline. */
-.board-check-row {
-  align-items: flex-end;
-}
-
-.board-check-row .form-checkbox-row {
-  flex: 1;
-  padding-bottom: 10px;
+/* The bug/feature checks share the description's label line. */
+.desc-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .modal-actions {

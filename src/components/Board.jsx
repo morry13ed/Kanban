@@ -139,19 +139,56 @@ export default function Board() {
   const handleSaveTask = (taskData, targetBoardId) => {
     if (editingTask) {
       const owner = editingTask._boardId ?? board.id;
+      // A column change is a real move (status rules, movedAt, confetti),
+      // not a silent field edit.
+      const { columnId: newColumnId, ...fields } = taskData;
+      const colChanged = newColumnId && newColumnId !== editingTask.columnId;
       dispatch({
         type: 'UPDATE_TASK',
-        payload: { boardId: owner, taskId: editingTask.id, updates: taskData },
+        payload: { boardId: owner, taskId: editingTask.id, updates: fields },
       });
-      if (targetBoardId && targetBoardId !== owner) {
+      const finalBoard =
+        targetBoardId && targetBoardId !== owner ? targetBoardId : owner;
+      if (finalBoard !== owner) {
         dispatch({
           type: 'TRANSFER_TASK',
           payload: {
             fromBoardId: owner,
-            toBoardId: targetBoardId,
+            toBoardId: finalBoard,
             taskId: editingTask.id,
           },
         });
+      }
+      if (colChanged) {
+        const from = columns.find((c) => c.id === editingTask.columnId);
+        const to = columns.find((c) => c.id === newColumnId);
+        // Demoting an auto-activated task without having changed its due
+        // date in this same edit still asks for a new date.
+        const demoting =
+          editingTask.autoActivated &&
+          editingTask.autoActivated === editingTask.dueDate &&
+          fields.dueDate === editingTask.dueDate &&
+          isActiveColumn(from) &&
+          to &&
+          !isActiveColumn(to) &&
+          !isSuccessColumn(to);
+        if (demoting) {
+          setRescheduling({
+            taskId: editingTask.id,
+            targetColumnId: newColumnId,
+            beforeTaskId: null,
+          });
+        } else {
+          celebrateIfSuccess(editingTask.id, newColumnId);
+          dispatch({
+            type: 'MOVE_TASK',
+            payload: {
+              boardId: finalBoard,
+              taskId: editingTask.id,
+              targetColumnId: newColumnId,
+            },
+          });
+        }
       }
     } else {
       dispatch({

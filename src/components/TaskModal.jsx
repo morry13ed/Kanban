@@ -74,12 +74,28 @@ export default function TaskModal({
   const [description, setDescription] = useState(task?.description || '');
   const [assignee, setAssignee] = useState(task?.assignee || 'Unassigned');
   const [dueDate, setDueDate] = useState(task?.dueDate || '');
-  // Not editable here: new tasks land in the column you added them from, and
-  // existing ones move by dragging or the arrows on the card.
-  const columnId = task?.columnId || defaultColumnId || '';
+  const [columnId, setColumnId] = useState(
+    task?.columnId || defaultColumnId || ''
+  );
+  const [columnMenuOpen, setColumnMenuOpen] = useState(false);
+  const columnSelectRef = useRef(null);
   const inActiveColumn = isActiveColumn(
     columns.find((c) => c.id === columnId)
   );
+
+  useEffect(() => {
+    if (!columnMenuOpen) return;
+    const onPointerDown = (e) => {
+      if (
+        columnSelectRef.current &&
+        !columnSelectRef.current.contains(e.target)
+      ) {
+        setColumnMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [columnMenuOpen]);
   const [impact, setImpact] = useState(task?.impact ?? LEVEL_DEFAULT);
   const [time, setTime] = useState(task?.time ?? LEVEL_DEFAULT);
   const [demand, setDemand] = useState(task?.demand ?? LEVEL_MIN);
@@ -228,7 +244,30 @@ export default function TaskModal({
           </div>
 
           <div className="form-group">
-            <label htmlFor="task-desc">Description</label>
+            <div className="desc-label-row">
+              <label htmlFor="task-desc">Description</label>
+              <div className="form-checkbox-row">
+                <label className="form-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={isBug}
+                    onChange={(e) => setIsBug(e.target.checked)}
+                  />
+                  Bug
+                </label>
+                <label
+                  className="form-checkbox"
+                  title="A new feature idea, usually meaning research to do"
+                >
+                  <input
+                    type="checkbox"
+                    checked={isFeature}
+                    onChange={(e) => setIsFeature(e.target.checked)}
+                  />
+                  Feature
+                </label>
+              </div>
+            </div>
             <div className="description-field">
               <textarea
                 id="task-desc"
@@ -291,7 +330,7 @@ export default function TaskModal({
             )}
           </div>
 
-          <div className="form-row board-check-row">
+          <div className="form-row">
           {boardOptions.length > 0 && (
             <div className="form-group">
               <label htmlFor="task-board">Board</label>
@@ -336,27 +375,43 @@ export default function TaskModal({
             </div>
           )}
 
-          <div className="form-checkbox-row">
-            <label className="form-checkbox">
-              <input
-                type="checkbox"
-                checked={isBug}
-                onChange={(e) => setIsBug(e.target.checked)}
-              />
-              Bug
-            </label>
-
-            <label
-              className="form-checkbox"
-              title="A new feature idea, usually meaning research to do"
-            >
-              <input
-                type="checkbox"
-                checked={isFeature}
-                onChange={(e) => setIsFeature(e.target.checked)}
-              />
-              Feature
-            </label>
+          <div className="form-group">
+            <label htmlFor="task-column">Column</label>
+            <div className="assignee-field" ref={columnSelectRef}>
+              <button
+                type="button"
+                id="task-column"
+                className="assignee-select"
+                onClick={() => setColumnMenuOpen((open) => !open)}
+              >
+                <span className="assignee-select-value">
+                  {columns.find((c) => c.id === columnId)?.name ?? ''}
+                </span>
+                <ChevronIcon />
+              </button>
+              {columnMenuOpen && (
+                <div className="assignee-menu">
+                  {columns.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={`assignee-menu-item ${
+                        option.id === columnId ? 'selected' : ''
+                      }`}
+                      onClick={() => {
+                        setColumnId(option.id);
+                        setColumnMenuOpen(false);
+                      }}
+                    >
+                      <span className="assignee-menu-name">{option.name}</span>
+                      {option.id === columnId && (
+                        <span className="assignee-menu-check">✓</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           </div>
 
