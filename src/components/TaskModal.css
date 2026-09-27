@@ -245,6 +245,27 @@
   font-size: 11px;
 }
 
+/* Check-mark field on every assignee row - the visible promise that this
+   menu is a multi-select. */
+.assignee-menu-checkbox {
+  margin-left: auto;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--hover);
+  color: var(--accent);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.assignee-menu-checkbox.checked {
+  background: var(--active-bg);
+}
+
 /* ── Description attachments ── */
 .description-field {
   position: relative;

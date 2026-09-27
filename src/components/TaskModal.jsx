@@ -606,9 +606,13 @@ export default function TaskModal({
                             />
                           )}
                           <span className="assignee-menu-name">{option}</span>
-                          {selected && (
-                            <span className="assignee-menu-check">✓</span>
-                          )}
+                          <span
+                            className={`assignee-menu-checkbox ${
+                              selected ? 'checked' : ''
+                            }`}
+                          >
+                            {selected ? '✓' : ''}
+                          </span>
                         </button>
                       );
                     })}
