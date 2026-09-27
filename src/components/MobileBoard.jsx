@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import {
   sortTasks,
   sortOptionsForColumn,
@@ -14,6 +15,7 @@ import {
   isSuccessColumn,
   getPriority,
   getMemberColor,
+  normalizeMember,
   readableTextOn,
   STATUS_ACTIVE,
   STATUS_PAUSED,
@@ -41,6 +43,7 @@ import './MobileBoard.css';
 // dragging between columns. Tasks move through a tap sheet instead.
 export default function MobileBoard({ onOpenMenu }) {
   const { state, dispatch } = useApp();
+  const { user } = useAuth();
 
   const [rawColumnId, setRawColumnId] = useState(null);
   const [openMenu, setOpenMenu] = useState(null); // 'filter' | 'sort' | 'more'
@@ -256,7 +259,11 @@ export default function MobileBoard({ onOpenMenu }) {
     } else {
       dispatch({
         type: 'ADD_TASK',
-        payload: { boardId: targetBoardId ?? board.id, ...data },
+        payload: {
+          boardId: targetBoardId ?? board.id,
+          ...data,
+          createdBy: user?.email || '',
+        },
       });
     }
     // Apply the due-date rule right away instead of waiting for the next
@@ -359,6 +366,15 @@ export default function MobileBoard({ onOpenMenu }) {
       : null;
 
   const movingTask = allTasks.find((t) => t.id === movingTaskId);
+
+  const authorLabel = (task) => {
+    const email = task?.createdBy;
+    if (!email) return '';
+    const member = (board.members || [])
+      .map(normalizeMember)
+      .find((m) => m.email === email);
+    return member?.name || email.split('@')[0];
+  };
 
   return (
     <div className="mboard">
@@ -750,6 +766,7 @@ export default function MobileBoard({ onOpenMenu }) {
         <TaskModal
           task={editingTask}
           columns={columns}
+          madeBy={editingTask ? authorLabel(editingTask) : ''}
           boardOptions={boardOptions}
           currentBoardId={
             editingTask ? (editingTask._boardId ?? board.id) : board.id

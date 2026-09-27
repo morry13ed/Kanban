@@ -464,6 +464,14 @@
   text-decoration: underline;
 }
 
+/* Who created the task - stamped automatically, shown quietly. */
+.made-by {
+  margin-right: auto;
+  align-self: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
 /* ── Image viewer ── */
 .lightbox {
   position: fixed;

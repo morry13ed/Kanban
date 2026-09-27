@@ -35,6 +35,7 @@ export function createTask({
   attachments = [],
   status = STATUS_NONE,
   completion = 0,
+  createdBy = '',
 }) {
   return {
     id: generateId(),
@@ -53,6 +54,7 @@ export function createTask({
     attachments,
     status,
     completion,
+    createdBy,
     archived: false,
   };
 }

@@ -62,6 +62,7 @@ function ChevronIcon() {
 
 export default function TaskModal({
   task,
+  madeBy = '',
   defaultColumnId,
   columns = [],
   boardOptions = [],
@@ -695,6 +696,11 @@ export default function TaskModal({
           )}
 
           <div className="modal-actions">
+            {task && madeBy && (
+              <span className="made-by" title={task.createdBy}>
+                Made by {madeBy}
+              </span>
+            )}
             <button type="button" className="btn btn-ghost" onClick={onClose}>
               Cancel
             </button>

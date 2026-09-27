@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import {
   sortTasks,
   getMemberColor,
+  normalizeMember,
   DEFAULT_SORT,
   DEFAULT_COLUMN_TYPE,
   COLUMN_TYPES,
@@ -25,6 +27,7 @@ import './Board.css';
 
 export default function Board() {
   const { state, dispatch } = useApp();
+  const { user } = useAuth();
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [defaultColumnId, setDefaultColumnId] = useState(null);
@@ -194,7 +197,11 @@ export default function Board() {
     } else {
       dispatch({
         type: 'ADD_TASK',
-        payload: { boardId: targetBoardId ?? board.id, ...taskData },
+        payload: {
+          boardId: targetBoardId ?? board.id,
+          ...taskData,
+          createdBy: user?.email || '',
+        },
       });
     }
     // Apply the due-date rule right away instead of waiting for the next
@@ -398,6 +405,17 @@ export default function Board() {
     setRescheduling(null);
   };
 
+  // The stamp is the creator's email; on screen it reads as the matching
+  // collaborator's name, or the email's own prefix.
+  const authorLabel = (task) => {
+    const email = task?.createdBy;
+    if (!email) return '';
+    const member = (board.members || [])
+      .map(normalizeMember)
+      .find((m) => m.email === email);
+    return member?.name || email.split('@')[0];
+  };
+
   const handleAddSubBoard = () => {
     const name = newSubBoardName.trim();
     if (!name) return;
@@ -564,6 +582,7 @@ export default function Board() {
         <TaskModal
           task={editingTask}
           columns={columns}
+          madeBy={editingTask ? authorLabel(editingTask) : ''}
           boardOptions={boardOptions}
           currentBoardId={
             editingTask ? (editingTask._boardId ?? board.id) : board.id
