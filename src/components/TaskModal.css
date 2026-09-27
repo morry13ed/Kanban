@@ -160,6 +160,28 @@
   cursor: pointer;
 }
 
+/* One dot per assignee, overlapping, pinned inside the field's right end. */
+.assignee-color-stack {
+  position: absolute;
+  right: 32px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  pointer-events: none;
+}
+
+.assignee-color-stack .assignee-color-dot.stacked {
+  position: static;
+  transform: none;
+  margin-left: -6px;
+  width: 14px;
+  height: 14px;
+}
+
+.assignee-color-stack .assignee-color-dot.stacked:first-child {
+  margin-left: 0;
+}
+
 .assignee-menu {
   position: absolute;
   top: calc(100% + 4px);

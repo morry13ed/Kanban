@@ -10,6 +10,7 @@ import {
   isActiveColumn,
   isSuccessColumn,
   dueHasArrived,
+  taskAssignees,
 } from '../utils/helpers';
 import {
   ACCEPTED_TYPES,
@@ -74,7 +75,7 @@ export default function TaskModal({
 }) {
   const [title, setTitle] = useState(task?.title || '');
   const [description, setDescription] = useState(task?.description || '');
-  const [assignee, setAssignee] = useState(task?.assignee || 'Unassigned');
+  const [assignees, setAssignees] = useState(() => taskAssignees(task));
   const [dueDate, setDueDate] = useState(task?.dueDate || '');
   const [columnId, setColumnId] = useState(
     task?.columnId || defaultColumnId || ''
@@ -265,7 +266,9 @@ export default function TaskModal({
     onSave({
       title: trimmed,
       description: description.trim(),
-      assignee,
+      // First name doubles as the legacy single-assignee field.
+      assignee: assignees[0] ?? 'Unassigned',
+      assignees,
       columnId,
       dueDate,
       impact: roundLevel(impact),
@@ -549,36 +552,66 @@ export default function TaskModal({
                   className="assignee-select"
                   onClick={() => setAssigneeMenuOpen((open) => !open)}
                 >
-                  <span className="assignee-select-value">{assignee}</span>
+                  <span className="assignee-select-value">
+                    {assignees.length > 0 ? assignees.join(', ') : 'Unassigned'}
+                  </span>
                   <ChevronIcon />
                 </button>
+                {assignees.length > 0 && (
+                  <span className="assignee-color-stack">
+                    {assignees.slice(0, 3).map((name) => (
+                      <span
+                        key={name}
+                        className="assignee-color-dot stacked"
+                        title={name}
+                        style={{ backgroundColor: memberColorOf(name) }}
+                      />
+                    ))}
+                  </span>
+                )}
 
                 {assigneeMenuOpen && (
                   <div className="assignee-menu">
-                    {assigneeOptions.map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        className={`assignee-menu-item ${
-                          option === assignee ? 'active' : ''
-                        }`}
-                        onClick={() => {
-                          setAssignee(option);
-                          setAssigneeMenuOpen(false);
-                        }}
-                      >
-                        {option !== 'Unassigned' && (
-                          <span
-                            className="assignee-menu-dot"
-                            style={{ backgroundColor: memberColorOf(option) }}
-                          />
-                        )}
-                        <span className="assignee-menu-name">{option}</span>
-                        {option === assignee && (
-                          <span className="assignee-menu-check">✓</span>
-                        )}
-                      </button>
-                    ))}
+                    {assigneeOptions.map((option) => {
+                      const selected =
+                        option === 'Unassigned'
+                          ? assignees.length === 0
+                          : assignees.includes(option);
+                      return (
+                        <button
+                          key={option}
+                          type="button"
+                          className={`assignee-menu-item ${
+                            selected ? 'active' : ''
+                          }`}
+                          onClick={() => {
+                            // Names toggle and the menu stays open; picking
+                            // Unassigned clears the lot and closes.
+                            if (option === 'Unassigned') {
+                              setAssignees([]);
+                              setAssigneeMenuOpen(false);
+                              return;
+                            }
+                            setAssignees((current) =>
+                              current.includes(option)
+                                ? current.filter((n) => n !== option)
+                                : [...current, option]
+                            );
+                          }}
+                        >
+                          {option !== 'Unassigned' && (
+                            <span
+                              className="assignee-menu-dot"
+                              style={{ backgroundColor: memberColorOf(option) }}
+                            />
+                          )}
+                          <span className="assignee-menu-name">{option}</span>
+                          {selected && (
+                            <span className="assignee-menu-check">✓</span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
 

@@ -5,6 +5,7 @@ import {
   sortTasks,
   getMemberColor,
   normalizeMember,
+  taskAssignees,
   DEFAULT_SORT,
   DEFAULT_COLUMN_TYPE,
   COLUMN_TYPES,
@@ -105,11 +106,7 @@ export default function Board() {
       : [];
 
   const inferredMembers = Array.from(
-    new Set(
-      allTasks
-        .map((t) => t.assignee)
-        .filter((a) => a && a !== 'Unassigned')
-    )
+    new Set(allTasks.flatMap((t) => taskAssignees(t)))
   );
 
   const memberNamesFromBoard = (board.members || [])
@@ -122,7 +119,9 @@ export default function Board() {
   const filteredTasks = allTasks.filter((t) => {
     if (t.archived) return false;
     if (state.filter === 'All') return true;
-    return t.assignee === state.filter;
+    const names = taskAssignees(t);
+    if (state.filter === 'Unassigned') return names.length === 0;
+    return names.includes(state.filter);
   });
 
   const filterOptions = Array.from(

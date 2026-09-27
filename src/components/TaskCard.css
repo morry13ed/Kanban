@@ -156,6 +156,29 @@
   font-weight: 700;
 }
 
+/* Several assignees stack into overlapping circles; the ring keeps each
+   one readable over its neighbour. */
+.assignee-stack {
+  display: inline-flex;
+  align-items: center;
+}
+
+.assignee-stack .assignee-avatar {
+  margin-left: -6px;
+  border: 2px solid var(--card-bg);
+  box-sizing: content-box;
+}
+
+.assignee-stack .assignee-avatar:first-child {
+  margin-left: 0;
+}
+
+.assignee-more {
+  background: var(--hover);
+  color: var(--text-secondary);
+  font-size: 9px;
+}
+
 /* Neutral, same geometry as the impact chip. */
 .task-attachments {
   display: inline-flex;

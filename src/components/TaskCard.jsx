@@ -22,6 +22,7 @@ import {
   shortName,
   openAttachment,
 } from '../utils/attachments';
+import { taskAssignees } from '../utils/helpers';
 import './TaskCard.css';
 
 
@@ -49,7 +50,7 @@ export default function TaskCard({
   const board = state.boards.find((b) => b.id === boardId);
   // A task shown on a master board may really live in a sub-board.
   const ownerBoardId = task._boardId ?? boardId;
-  const assigneeColor = getMemberColor(board, task.assignee);
+  const assigneeNames = taskAssignees(task);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(task.title);
   // 'top' | 'bottom' — which side of this card the drop would land on.
@@ -240,18 +241,42 @@ export default function TaskCard({
             Feature
           </span>
         )}
-        {task.assignee !== 'Unassigned' && (
+        {assigneeNames.length === 1 && (
           <span className="task-assignee">
             <span
               className="assignee-avatar"
               style={{
-                backgroundColor: assigneeColor,
-                color: readableTextOn(assigneeColor),
+                backgroundColor: getMemberColor(board, assigneeNames[0]),
+                color: readableTextOn(getMemberColor(board, assigneeNames[0])),
               }}
             >
-              {task.assignee.charAt(0)}
+              {assigneeNames[0].charAt(0)}
             </span>
-            {task.assignee}
+            {assigneeNames[0]}
+          </span>
+        )}
+        {assigneeNames.length > 1 && (
+          <span
+            className="task-assignee assignee-stack"
+            title={assigneeNames.join(', ')}
+          >
+            {assigneeNames.slice(0, 3).map((name) => (
+              <span
+                key={name}
+                className="assignee-avatar"
+                style={{
+                  backgroundColor: getMemberColor(board, name),
+                  color: readableTextOn(getMemberColor(board, name)),
+                }}
+              >
+                {name.charAt(0)}
+              </span>
+            ))}
+            {assigneeNames.length > 3 && (
+              <span className="assignee-avatar assignee-more">
+                +{assigneeNames.length - 3}
+              </span>
+            )}
           </span>
         )}
         <span className="task-score" title={`Score ${getPriority(task)}`}>

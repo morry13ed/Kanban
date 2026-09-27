@@ -16,6 +16,7 @@ import {
   getPriority,
   getMemberColor,
   normalizeMember,
+  taskAssignees,
   readableTextOn,
   STATUS_ACTIVE,
   STATUS_PAUSED,
@@ -140,7 +141,9 @@ export default function MobileBoard({ onOpenMenu }) {
         allTasks.filter((t) => {
           if (t.archived || t.columnId !== activeColumn.id) return false;
           if (state.filter === 'All') return true;
-          return t.assignee === state.filter;
+          const names = taskAssignees(t);
+          if (state.filter === 'Unassigned') return names.length === 0;
+          return names.includes(state.filter);
         }),
         activeColumn.sortBy
       )
@@ -595,7 +598,7 @@ export default function MobileBoard({ onOpenMenu }) {
             task.dueDate &&
             new Date(task.dueDate) < new Date() &&
             !task.archived;
-          const assigneeColor = getMemberColor(board, task.assignee);
+          const names = taskAssignees(task);
           const dimmed = isSuccessColumn(activeColumn);
 
           return (
@@ -649,15 +652,25 @@ export default function MobileBoard({ onOpenMenu }) {
                   )}
                 </div>
                 <div className="mboard-task-meta">
-                  {task.assignee !== 'Unassigned' && (
-                    <span
-                      className="assignee-avatar"
-                      style={{
-                        backgroundColor: assigneeColor,
-                        color: readableTextOn(assigneeColor),
-                      }}
-                    >
-                      {task.assignee.charAt(0)}
+                  {names.length > 0 && (
+                    <span className="assignee-stack" title={names.join(', ')}>
+                      {names.slice(0, 3).map((name) => (
+                        <span
+                          key={name}
+                          className="assignee-avatar"
+                          style={{
+                            backgroundColor: getMemberColor(board, name),
+                            color: readableTextOn(getMemberColor(board, name)),
+                          }}
+                        >
+                          {name.charAt(0)}
+                        </span>
+                      ))}
+                      {names.length > 3 && (
+                        <span className="assignee-avatar assignee-more">
+                          +{names.length - 3}
+                        </span>
+                      )}
                     </span>
                   )}
                   {task.isBug && (

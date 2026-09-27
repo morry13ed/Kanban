@@ -25,6 +25,7 @@ export function createTask({
   title,
   columnId,
   assignee = 'Unassigned',
+  assignees = null,
   description = '',
   dueDate = '',
   impact = LEVEL_DEFAULT,
@@ -42,6 +43,7 @@ export function createTask({
     title,
     description,
     assignee,
+    ...(assignees ? { assignees } : {}),
     columnId,
     createdAt: new Date().toISOString(),
     movedAt: new Date().toISOString(),
@@ -226,11 +228,11 @@ export function sortTasks(tasks, sortBy) {
         (a, b) => clampLevel(b?.impact) - clampLevel(a?.impact)
       );
 
-    // A→Z; Unassigned sinks to the bottom.
+    // A→Z by the first assignee; Unassigned sinks to the bottom.
     case 'assignee':
       return sorted.sort((a, b) => {
-        const nameA = a.assignee || 'Unassigned';
-        const nameB = b.assignee || 'Unassigned';
+        const nameA = taskAssignees(a)[0] || 'Unassigned';
+        const nameB = taskAssignees(b)[0] || 'Unassigned';
         if (nameA === nameB) return 0;
         if (nameA === 'Unassigned') return 1;
         if (nameB === 'Unassigned') return -1;
@@ -240,6 +242,15 @@ export function sortTasks(tasks, sortBy) {
     default:
       return tasks;
   }
+}
+
+// A task may carry several assignees; older tasks have a single string.
+export function taskAssignees(task) {
+  if (Array.isArray(task?.assignees)) {
+    return task.assignees.filter((n) => n && n !== 'Unassigned');
+  }
+  const one = task?.assignee;
+  return one && one !== 'Unassigned' ? [one] : [];
 }
 
 // Date-only strings compare lexically; "arrived" means today or earlier.
