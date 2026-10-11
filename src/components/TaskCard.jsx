@@ -22,7 +22,7 @@ import {
   shortName,
   openAttachment,
 } from '../utils/attachments';
-import { taskAssignees } from '../utils/helpers';
+import { taskAssignees, isRepeating, repeatLabel } from '../utils/helpers';
 import './TaskCard.css';
 
 
@@ -239,6 +239,14 @@ export default function TaskCard({
           <span className="task-feature" title="Feature idea">
             <BulbIcon />
             Feature
+          </span>
+        )}
+        {isRepeating(task) && (
+          <span
+            className="task-repeat"
+            title={`Repeats: ${repeatLabel(task.repeat).toLowerCase()}`}
+          >
+            ↻ {repeatLabel(task.repeat).toLowerCase()}
           </span>
         )}
         {assigneeNames.length === 1 && (

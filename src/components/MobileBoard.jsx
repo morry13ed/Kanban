@@ -17,6 +17,8 @@ import {
   getMemberColor,
   normalizeMember,
   taskAssignees,
+  isRepeating,
+  repeatLabel,
   readableTextOn,
   STATUS_ACTIVE,
   STATUS_PAUSED,
@@ -683,6 +685,11 @@ export default function MobileBoard({ onOpenMenu }) {
                     <span className="task-feature">
                       <BulbIcon />
                       Feature
+                    </span>
+                  )}
+                  {isRepeating(task) && (
+                    <span className="task-repeat">
+                      ↻ {repeatLabel(task.repeat).toLowerCase()}
                     </span>
                   )}
                   <span className="task-score" title={`Score ${getPriority(task)}`}>

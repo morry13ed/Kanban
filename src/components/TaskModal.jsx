@@ -11,6 +11,9 @@ import {
   isSuccessColumn,
   dueHasArrived,
   taskAssignees,
+  REPEAT_OPTIONS,
+  repeatLabel,
+  nextDueDate,
 } from '../utils/helpers';
 import {
   ACCEPTED_TYPES,
@@ -107,6 +110,23 @@ export default function TaskModal({
   // Status is set by column transfers (and the card chip), not edited here.
   const status = task?.status ?? STATUS_NONE;
   const [completion, setCompletion] = useState(task?.completion ?? 0);
+  const [repeat, setRepeat] = useState(task?.repeat ?? 'none');
+  const [repeatMenuOpen, setRepeatMenuOpen] = useState(false);
+  const repeatSelectRef = useRef(null);
+
+  useEffect(() => {
+    if (!repeatMenuOpen) return;
+    const onPointerDown = (e) => {
+      if (
+        repeatSelectRef.current &&
+        !repeatSelectRef.current.contains(e.target)
+      ) {
+        setRepeatMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [repeatMenuOpen]);
   const [attachments, setAttachments] = useState(task?.attachments ?? []);
   const [attachError, setAttachError] = useState('');
   const [preview, setPreview] = useState(null);
@@ -279,6 +299,7 @@ export default function TaskModal({
       attachments,
       status,
       completion: Math.round(completion),
+      repeat,
     }, targetBoardId);
   };
 
@@ -450,8 +471,8 @@ export default function TaskModal({
             )}
           </div>
 
-          <div className="form-row">
           {boardOptions.length > 0 && (
+          <div className="form-row">
             <div className="form-group">
               <label htmlFor="task-board">Board</label>
               <div className="assignee-field" ref={boardSelectRef}>
@@ -493,8 +514,10 @@ export default function TaskModal({
                 )}
               </div>
             </div>
+          </div>
           )}
 
+          <div className="form-row">
           <div className="form-group">
             <label htmlFor="task-column">Column</label>
             <div className="assignee-field" ref={columnSelectRef}>
@@ -533,7 +556,56 @@ export default function TaskModal({
               )}
             </div>
           </div>
+
+          <div className="form-group">
+            <label htmlFor="task-repeat">Repeat</label>
+            <div className="assignee-field" ref={repeatSelectRef}>
+              <button
+                type="button"
+                id="task-repeat"
+                className="assignee-select"
+                onClick={() => setRepeatMenuOpen((open) => !open)}
+              >
+                <span className="assignee-select-value">
+                  {repeatLabel(repeat)}
+                </span>
+                <ChevronIcon />
+              </button>
+              {repeatMenuOpen && (
+                <div className="assignee-menu">
+                  {REPEAT_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`assignee-menu-item ${
+                        option.value === repeat ? 'active' : ''
+                      }`}
+                      onClick={() => {
+                        setRepeat(option.value);
+                        setRepeatMenuOpen(false);
+                      }}
+                    >
+                      <span className="assignee-menu-name">
+                        {option.label}
+                      </span>
+                      {option.value === repeat && (
+                        <span className="assignee-menu-check">✓</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
+          </div>
+
+          {repeat !== 'none' && (
+            <p className="auto-activate-hint">
+              When this task reaches the success column, a fresh copy is
+              created, due {nextDueDate(dueDate, repeat)} — counted from the
+              due date.
+            </p>
+          )}
 
           {willAutoActivate && (
             <p className="auto-activate-hint">

@@ -37,6 +37,7 @@ export function createTask({
   status = STATUS_NONE,
   completion = 0,
   createdBy = '',
+  repeat = 'none',
 }) {
   return {
     id: generateId(),
@@ -57,6 +58,7 @@ export function createTask({
     status,
     completion,
     createdBy,
+    repeat,
     archived: false,
   };
 }
@@ -242,6 +244,46 @@ export function sortTasks(tasks, sortBy) {
     default:
       return tasks;
   }
+}
+
+// ── Recurring tasks ──
+export const REPEAT_OPTIONS = [
+  { value: 'none', label: 'None' },
+  { value: 'day', label: 'Every day' },
+  { value: 'week', label: 'Every week' },
+  { value: '2weeks', label: 'Every 2 weeks' },
+  { value: 'month', label: 'Every month' },
+];
+
+export function isRepeating(task) {
+  return Boolean(task?.repeat) && task.repeat !== 'none';
+}
+
+export function repeatLabel(value) {
+  return REPEAT_OPTIONS.find((o) => o.value === value)?.label ?? 'None';
+}
+
+// Next occurrence counted from the due date (strict schedule). A repeating
+// task without a date anchors on today. Months clamp to the month's end.
+export function nextDueDate(from, repeat) {
+  const base = from || localToday();
+  const [y, m, d] = base.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  if (repeat === 'day') date.setDate(date.getDate() + 1);
+  else if (repeat === 'week') date.setDate(date.getDate() + 7);
+  else if (repeat === '2weeks') date.setDate(date.getDate() + 14);
+  else if (repeat === 'month') {
+    const day = date.getDate();
+    date.setMonth(date.getMonth() + 1);
+    if (date.getDate() !== day) date.setDate(0);
+  } else {
+    return base;
+  }
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
 }
 
 // A task may carry several assignees; older tasks have a single string.

@@ -27,6 +27,8 @@ import {
   STATUS_ACTIVE,
   isSuccessColumn,
   isActiveColumn,
+  isRepeating,
+  nextDueDate,
   normalizeState,
 } from '../utils/helpers';
 
@@ -59,6 +61,29 @@ function statusOnTransfer(sourceColumn, targetColumn) {
     return { status: STATUS_NONE };
   }
   return {};
+}
+
+// Completing a repeating task plants its next occurrence: a fresh copy in
+// the board's first regular column, due one interval after the old due date.
+// The finished copy keeps its place in the success column and drops the
+// repeat mark, so exactly one live copy exists at a time.
+function nextRecurrence(completed, columns) {
+  const home =
+    columns.find((c) => !isActiveColumn(c) && !isSuccessColumn(c)) ??
+    columns[0];
+  if (!home) return null;
+  return {
+    ...completed,
+    id: generateId(),
+    columnId: home.id,
+    createdAt: new Date().toISOString(),
+    movedAt: new Date().toISOString(),
+    dueDate: nextDueDate(completed.dueDate, completed.repeat),
+    status: STATUS_NONE,
+    completion: 0,
+    autoActivated: null,
+    archived: false,
+  };
 }
 
 // Sub-boards store no columns of their own - they always use the master's.
@@ -371,26 +396,35 @@ function reducer(state, action) {
           if (b.id !== boardId) return b;
           const cols = columnsOf(b, state.boards);
           const target = cols.find((c) => c.id === targetColumnId);
-          return {
-            ...b,
-            tasks: b.tasks.map((t) =>
-              t.id === taskId
-                ? {
-                    ...t,
-                    columnId: targetColumnId,
-                    ...(t.columnId !== targetColumnId
-                      ? {
-                          movedAt: new Date().toISOString(),
-                          ...statusOnTransfer(
-                            cols.find((c) => c.id === t.columnId),
-                            target
-                          ),
-                        }
-                      : {}),
-                  }
-                : t
-            ),
-          };
+          const original = b.tasks.find((t) => t.id === taskId);
+          const completesRecurring =
+            original &&
+            isRepeating(original) &&
+            original.columnId !== targetColumnId &&
+            isSuccessColumn(target);
+          const tasks = b.tasks.map((t) =>
+            t.id === taskId
+              ? {
+                  ...t,
+                  columnId: targetColumnId,
+                  ...(completesRecurring ? { repeat: 'none' } : {}),
+                  ...(t.columnId !== targetColumnId
+                    ? {
+                        movedAt: new Date().toISOString(),
+                        ...statusOnTransfer(
+                          cols.find((c) => c.id === t.columnId),
+                          target
+                        ),
+                      }
+                    : {}),
+                }
+              : t
+          );
+          if (completesRecurring) {
+            const spawn = nextRecurrence(original, cols);
+            if (spawn) tasks.push(spawn);
+          }
+          return { ...b, tasks };
         }),
       };
     }
@@ -410,15 +444,21 @@ function reducer(state, action) {
 
           const rest = b.tasks.filter((t) => t.id !== taskId);
           const cols = columnsOf(b, state.boards);
+          const target = cols.find((c) => c.id === targetColumnId);
+          const completesRecurring =
+            isRepeating(moving) &&
+            moving.columnId !== targetColumnId &&
+            isSuccessColumn(target);
           const moved = {
             ...moving,
             columnId: targetColumnId,
+            ...(completesRecurring ? { repeat: 'none' } : {}),
             ...(moving.columnId !== targetColumnId
               ? {
                   movedAt: new Date().toISOString(),
                   ...statusOnTransfer(
                     cols.find((c) => c.id === moving.columnId),
-                    cols.find((c) => c.id === targetColumnId)
+                    target
                   ),
                 }
               : {}),
@@ -429,6 +469,11 @@ function reducer(state, action) {
 
           if (at === -1) rest.push(moved);
           else rest.splice(at, 0, moved);
+
+          if (completesRecurring) {
+            const spawn = nextRecurrence(moving, cols);
+            if (spawn) rest.push(spawn);
+          }
 
           return { ...b, tasks: rest };
         }),
