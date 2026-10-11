@@ -266,6 +266,16 @@
   background: var(--active-bg);
 }
 
+/* @mention suggestions, opening under the description. */
+.assignee-menu.mention-menu {
+  right: auto;
+  min-width: 200px;
+}
+
+.assignee-menu-item.highlighted {
+  background: var(--hover);
+}
+
 /* ── Description attachments ── */
 .description-field {
   position: relative;

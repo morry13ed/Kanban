@@ -16,13 +16,19 @@ import {
   subBoardsOf,
   dueHasArrived,
   localToday,
+  generateId,
 } from '../utils/helpers';
+import {
+  notifyNewMentions,
+  onOpenTaskRequest,
+} from '../utils/mentions';
 import { fireConfetti } from '../utils/confetti';
 import Column from './Column';
 import RescheduleDialog from './RescheduleDialog';
 import { TrashIcon } from './icons';
 import SegmentedControl from './SegmentedControl';
 import TaskModal from './TaskModal';
+import NotificationBell from './NotificationBell';
 import ConfirmDialog from './ConfirmDialog';
 import './Board.css';
 
@@ -62,6 +68,26 @@ export default function Board() {
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [boardMenuOpen]);
+
+  // The notification bell asks for a task by id; open it wherever it lives.
+  const boardsRef = useRef(state.boards);
+  useEffect(() => {
+    boardsRef.current = state.boards;
+  }, [state.boards]);
+  useEffect(
+    () =>
+      onOpenTaskRequest((taskId) => {
+        for (const b of boardsRef.current) {
+          const found = b.tasks.find((t) => t.id === taskId);
+          if (found) {
+            setEditingTask({ ...found, _boardId: b.id });
+            setShowTaskModal(true);
+            return;
+          }
+        }
+      }),
+    []
+  );
 
   const board = state.boards.find((b) => b.id === state.activeBoardId);
 
@@ -153,6 +179,15 @@ export default function Board() {
       });
       const finalBoard =
         targetBoardId && targetBoardId !== owner ? targetBoardId : owner;
+      notifyNewMentions({
+        members: board.members,
+        boardId: finalBoard,
+        taskId: editingTask.id,
+        taskTitle: fields.title,
+        before: editingTask.description,
+        after: fields.description,
+        user,
+      });
       if (finalBoard !== owner) {
         dispatch({
           type: 'TRANSFER_TASK',
@@ -194,13 +229,25 @@ export default function Board() {
         }
       }
     } else {
+      const id = generateId();
+      const newBoardId = targetBoardId ?? board.id;
       dispatch({
         type: 'ADD_TASK',
         payload: {
-          boardId: targetBoardId ?? board.id,
+          id,
+          boardId: newBoardId,
           ...taskData,
           createdBy: user?.email || '',
         },
+      });
+      notifyNewMentions({
+        members: board.members,
+        boardId: newBoardId,
+        taskId: id,
+        taskTitle: taskData.title,
+        before: '',
+        after: taskData.description,
+        user,
       });
     }
     // Apply the due-date rule right away instead of waiting for the next
@@ -453,6 +500,7 @@ export default function Board() {
               </button>
             ))}
           </div>
+          <NotificationBell buttonClassName="board-menu-btn" />
           <div className="board-menu-wrap" ref={boardMenuRef}>
             <button
               type="button"

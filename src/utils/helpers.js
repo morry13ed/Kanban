@@ -22,6 +22,7 @@ export const LEVEL_MAX = 5;
 export const LEVEL_DEFAULT = 3;
 
 export function createTask({
+  id = generateId(),
   title,
   columnId,
   assignee = 'Unassigned',
@@ -40,7 +41,7 @@ export function createTask({
   repeat = 'none',
 }) {
   return {
-    id: generateId(),
+    id,
     title,
     description,
     assignee,

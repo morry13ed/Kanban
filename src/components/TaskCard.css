@@ -126,6 +126,13 @@
   overflow: hidden;
 }
 
+.task-mention {
+  color: var(--accent);
+  font-weight: 600;
+  /* Keeps the @ in front of Hebrew names inside English sentences. */
+  unicode-bidi: isolate;
+}
+
 .task-meta {
   display: flex;
   align-items: center;

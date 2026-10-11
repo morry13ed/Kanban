@@ -19,6 +19,15 @@
   margin-left: auto;
 }
 
+/* The bell (signed in only) takes over the push to the right edge. */
+.mboard-topbar .bell-wrap {
+  margin-left: auto;
+}
+
+.mboard-topbar .bell-wrap + .mboard-addcol-btn {
+  margin-left: 0;
+}
+
 .mboard-addcol-btn {
   font-size: 18px;
 }

@@ -22,9 +22,15 @@ import {
   readableTextOn,
   STATUS_ACTIVE,
   STATUS_PAUSED,
+  generateId,
 } from '../utils/helpers';
+import {
+  notifyNewMentions,
+  onOpenTaskRequest,
+} from '../utils/mentions';
 import { fireConfetti } from '../utils/confetti';
 import TaskModal from './TaskModal';
+import NotificationBell from './NotificationBell';
 import ConfirmDialog from './ConfirmDialog';
 import RescheduleDialog from './RescheduleDialog';
 import BoardEditModal from './BoardEditModal';
@@ -82,6 +88,26 @@ export default function MobileBoard({ onOpenMenu }) {
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, [openMenu]);
+
+  // The notification bell asks for a task by id; open it wherever it lives.
+  const boardsRef = useRef(state.boards);
+  useEffect(() => {
+    boardsRef.current = state.boards;
+  }, [state.boards]);
+  useEffect(
+    () =>
+      onOpenTaskRequest((taskId) => {
+        for (const b of boardsRef.current) {
+          const found = b.tasks.find((t) => t.id === taskId);
+          if (found) {
+            setEditingTask({ ...found, _boardId: b.id });
+            setShowTaskModal(true);
+            return;
+          }
+        }
+      }),
+    []
+  );
 
   const board = state.boards.find((b) => b.id === state.activeBoardId);
 
@@ -227,6 +253,15 @@ export default function MobileBoard({ onOpenMenu }) {
       });
       const finalBoard =
         targetBoardId && targetBoardId !== owner ? targetBoardId : owner;
+      notifyNewMentions({
+        members: board.members,
+        boardId: finalBoard,
+        taskId: editingTask.id,
+        taskTitle: fields.title,
+        before: editingTask.description,
+        after: fields.description,
+        user,
+      });
       if (finalBoard !== owner) {
         dispatch({
           type: 'TRANSFER_TASK',
@@ -262,13 +297,25 @@ export default function MobileBoard({ onOpenMenu }) {
         }
       }
     } else {
+      const id = generateId();
+      const newBoardId = targetBoardId ?? board.id;
       dispatch({
         type: 'ADD_TASK',
         payload: {
-          boardId: targetBoardId ?? board.id,
+          id,
+          boardId: newBoardId,
           ...data,
           createdBy: user?.email || '',
         },
+      });
+      notifyNewMentions({
+        members: board.members,
+        boardId: newBoardId,
+        taskId: id,
+        taskTitle: data.title,
+        before: '',
+        after: data.description,
+        user,
       });
     }
     // Apply the due-date rule right away instead of waiting for the next
@@ -392,6 +439,7 @@ export default function MobileBoard({ onOpenMenu }) {
           {project ? `${project.name} / ` : ''}
           <strong>{board.name}</strong>
         </span>
+        <NotificationBell buttonClassName="mboard-menu-btn" />
         <button
           type="button"
           className="mboard-menu-btn mboard-addcol-btn"

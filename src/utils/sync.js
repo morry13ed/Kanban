@@ -136,3 +136,52 @@ export function subscribeBoards(onChange) {
     supabase.removeChannel(channel);
   };
 }
+
+// ── Mention notifications ──
+// One row per tagged person, addressed by email; RLS lets each signed-in
+// user read and mark only their own.
+
+export async function sendMentionNotifications(rows) {
+  if (rows.length === 0) return { error: null };
+  const { error } = await supabase.from('notifications').insert(rows);
+  if (error) console.error('Failed to send mention notifications:', error);
+  return { error: error ?? null };
+}
+
+export async function fetchNotifications() {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(30);
+  if (error) {
+    console.error('Failed to load notifications:', error);
+    return { rows: [], error };
+  }
+  return { rows: data || [], error: null };
+}
+
+export async function markNotificationsRead(ids) {
+  if (ids.length === 0) return { error: null };
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read: true })
+    .in('id', ids);
+  if (error) console.error('Failed to mark notifications read:', error);
+  return { error: error ?? null };
+}
+
+export function subscribeNotifications(onInsert) {
+  const channel = supabase
+    .channel(`notifications-${Math.random().toString(36).slice(2, 8)}`)
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'notifications' },
+      (payload) => onInsert(payload.new)
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}

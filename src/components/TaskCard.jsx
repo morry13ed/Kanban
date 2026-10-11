@@ -22,7 +22,13 @@ import {
   shortName,
   openAttachment,
 } from '../utils/attachments';
-import { taskAssignees, isRepeating, repeatLabel } from '../utils/helpers';
+import {
+  taskAssignees,
+  isRepeating,
+  repeatLabel,
+  normalizeMember,
+} from '../utils/helpers';
+import { splitMentions } from '../utils/mentions';
 import './TaskCard.css';
 
 
@@ -225,7 +231,20 @@ export default function TaskCard({
       </div>
 
       {task.description && (
-        <p className="task-description">{task.description}</p>
+        <p className="task-description">
+          {splitMentions(
+            task.description,
+            (board?.members || []).map((m) => normalizeMember(m).name)
+          ).map((part, i) =>
+            part.mention ? (
+              <span key={i} className="task-mention">
+                {part.text}
+              </span>
+            ) : (
+              part.text
+            )
+          )}
+        </p>
       )}
 
       <div className="task-meta">

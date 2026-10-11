@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import {
   LEVEL_MIN,
   LEVEL_MAX,
@@ -24,6 +24,7 @@ import {
   shortName,
   openAttachment,
 } from '../utils/attachments';
+import { mentionQueryAt } from '../utils/mentions';
 import { DocIcon, ImgIcon } from './icons';
 import './TaskModal.css';
 
@@ -78,6 +79,21 @@ export default function TaskModal({
 }) {
   const [title, setTitle] = useState(task?.title || '');
   const [description, setDescription] = useState(task?.description || '');
+  // { start, query } while an "@name" is being typed in the description.
+  const [mention, setMention] = useState(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const descRef = useRef(null);
+  // Where the caret goes once an inserted mention has rendered.
+  const pendingCaretRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const field = descRef.current;
+    const caret = pendingCaretRef.current;
+    if (!field || caret === null) return;
+    pendingCaretRef.current = null;
+    field.focus();
+    field.setSelectionRange(caret, caret);
+  }, [description]);
   const [assignees, setAssignees] = useState(() => taskAssignees(task));
   const [dueDate, setDueDate] = useState(task?.dueDate || '');
   const [columnId, setColumnId] = useState(
@@ -264,6 +280,48 @@ export default function TaskModal({
     setRemoved((r) => r.filter((e) => e.key !== entry.key));
   };
 
+  const mentionOptions = mention
+    ? members
+        .filter((name) =>
+          name.toLowerCase().includes(mention.query.toLowerCase())
+        )
+        .slice(0, 6)
+    : [];
+
+  const handleDescriptionChange = (e) => {
+    setDescription(e.target.value);
+    setMention(mentionQueryAt(e.target.value, e.target.selectionStart));
+    setMentionIndex(0);
+  };
+
+  const insertMention = (name) => {
+    const field = descRef.current;
+    const caret = field ? field.selectionStart : description.length;
+    const head = `${description.slice(0, mention.start)}@${name} `;
+    const tail = description.slice(caret).replace(/^ /, '');
+    pendingCaretRef.current = head.length;
+    setDescription(head + tail);
+    setMention(null);
+  };
+
+  const handleDescriptionKeyDown = (e) => {
+    if (mentionOptions.length === 0) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const step = e.key === 'ArrowDown' ? 1 : -1;
+      setMentionIndex(
+        (i) => (i + step + mentionOptions.length) % mentionOptions.length
+      );
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      insertMention(mentionOptions[mentionIndex] ?? mentionOptions[0]);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      setMention(null);
+    }
+  };
+
   const assigneeOptions = ['Unassigned', ...members];
   const score = getPriority({ impact, time, demand });
   const descDocLinks = docLinksFrom(description);
@@ -359,11 +417,47 @@ export default function TaskModal({
             <div className="description-field">
               <textarea
                 id="task-desc"
+                ref={descRef}
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional description..."
+                onChange={handleDescriptionChange}
+                onKeyDown={handleDescriptionKeyDown}
+                onClick={(e) =>
+                  setMention(
+                    mentionQueryAt(description, e.target.selectionStart)
+                  )
+                }
+                onBlur={() => setMention(null)}
+                placeholder={
+                  members.length > 0
+                    ? 'Optional description... type @ to tag someone'
+                    : 'Optional description...'
+                }
                 rows={3}
               />
+
+              {mentionOptions.length > 0 && (
+                <div className="assignee-menu mention-menu">
+                  {mentionOptions.map((name, i) => (
+                    <button
+                      key={name}
+                      type="button"
+                      className={`assignee-menu-item ${
+                        i === mentionIndex ? 'highlighted' : ''
+                      }`}
+                      // Keep focus in the textarea so the caret survives.
+                      onMouseDown={(e) => e.preventDefault()}
+                      onMouseEnter={() => setMentionIndex(i)}
+                      onClick={() => insertMention(name)}
+                    >
+                      <span
+                        className="assignee-menu-dot"
+                        style={{ backgroundColor: memberColorOf(name) }}
+                      />
+                      <span className="assignee-menu-name">{name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <div className="attachment-bar">
                 <button
