@@ -471,8 +471,8 @@ export default function TaskModal({
             )}
           </div>
 
-          {boardOptions.length > 0 && (
           <div className="form-row">
+          {boardOptions.length > 0 && (
             <div className="form-group">
               <label htmlFor="task-board">Board</label>
               <div className="assignee-field" ref={boardSelectRef}>
@@ -514,10 +514,8 @@ export default function TaskModal({
                 )}
               </div>
             </div>
-          </div>
           )}
 
-          <div className="form-row">
           <div className="form-group">
             <label htmlFor="task-column">Column</label>
             <div className="assignee-field" ref={columnSelectRef}>
@@ -557,62 +555,7 @@ export default function TaskModal({
             </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="task-repeat">Repeat</label>
-            <div className="assignee-field" ref={repeatSelectRef}>
-              <button
-                type="button"
-                id="task-repeat"
-                className="assignee-select"
-                onClick={() => setRepeatMenuOpen((open) => !open)}
-              >
-                <span className="assignee-select-value">
-                  {repeatLabel(repeat)}
-                </span>
-                <ChevronIcon />
-              </button>
-              {repeatMenuOpen && (
-                <div className="assignee-menu">
-                  {REPEAT_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={`assignee-menu-item ${
-                        option.value === repeat ? 'active' : ''
-                      }`}
-                      onClick={() => {
-                        setRepeat(option.value);
-                        setRepeatMenuOpen(false);
-                      }}
-                    >
-                      <span className="assignee-menu-name">
-                        {option.label}
-                      </span>
-                      {option.value === repeat && (
-                        <span className="assignee-menu-check">✓</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
-          </div>
-
-          {repeat !== 'none' && (
-            <p className="auto-activate-hint">
-              When this task reaches the success column, a fresh copy is
-              created, due {nextDueDate(dueDate, repeat)} — counted from the
-              due date.
-            </p>
-          )}
-
-          {willAutoActivate && (
-            <p className="auto-activate-hint">
-              This date has arrived — the task will start in{' '}
-              {activeColumnOnBoard.name}.
-            </p>
-          )}
 
           <div className="form-row">
             <div className="form-group">
@@ -704,6 +647,65 @@ export default function TaskModal({
               />
             </div>
           </div>
+
+
+          <div className="form-row">
+          <div className="form-group">
+            <label htmlFor="task-repeat">Repeat</label>
+            <div className="assignee-field" ref={repeatSelectRef}>
+              <button
+                type="button"
+                id="task-repeat"
+                className="assignee-select"
+                onClick={() => setRepeatMenuOpen((open) => !open)}
+              >
+                <span className="assignee-select-value">
+                  {repeatLabel(repeat)}
+                </span>
+                <ChevronIcon />
+              </button>
+              {repeatMenuOpen && (
+                <div className="assignee-menu">
+                  {REPEAT_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`assignee-menu-item ${
+                        option.value === repeat ? 'active' : ''
+                      }`}
+                      onClick={() => {
+                        setRepeat(option.value);
+                        setRepeatMenuOpen(false);
+                      }}
+                    >
+                      <span className="assignee-menu-name">
+                        {option.label}
+                      </span>
+                      {option.value === repeat && (
+                        <span className="assignee-menu-check">✓</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          </div>
+
+          {repeat !== 'none' && (
+            <p className="auto-activate-hint">
+              When this task reaches the success column, a fresh copy is
+              created, due {nextDueDate(dueDate, repeat)} — counted from the
+              due date.
+            </p>
+          )}
+
+          {willAutoActivate && (
+            <p className="auto-activate-hint">
+              This date has arrived — the task will start in{' '}
+              {activeColumnOnBoard.name}.
+            </p>
+          )}
 
           <div className="form-row">
             <div className="form-group">
