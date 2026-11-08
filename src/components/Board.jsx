@@ -29,6 +29,7 @@ import { TrashIcon } from './icons';
 import SegmentedControl from './SegmentedControl';
 import TaskModal from './TaskModal';
 import NotificationBell from './NotificationBell';
+import { getColumnFilter } from '../utils/columnFilter';
 import ConfirmDialog from './ConfirmDialog';
 import './Board.css';
 
@@ -371,7 +372,8 @@ export default function Board() {
 
     // Rearranging inside a sorted column can't change what you see, so don't
     // quietly shuffle the manual order sitting underneath it.
-    if (isSorted && dragged?.columnId === columnId) {
+    const isFiltered = getColumnFilter(columnsBoardId, columnId) !== 'all';
+    if ((isSorted || isFiltered) && dragged?.columnId === columnId) {
       setDraggedTaskId(null);
       return;
     }

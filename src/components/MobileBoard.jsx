@@ -31,6 +31,13 @@ import {
 import { fireConfetti } from '../utils/confetti';
 import TaskModal from './TaskModal';
 import NotificationBell from './NotificationBell';
+import {
+  TYPE_FILTERS,
+  getColumnFilter,
+  setColumnFilter,
+  matchesTypeFilter,
+  useColumnFiltersVersion,
+} from '../utils/columnFilter';
 import ConfirmDialog from './ConfirmDialog';
 import RescheduleDialog from './RescheduleDialog';
 import BoardEditModal from './BoardEditModal';
@@ -111,6 +118,8 @@ export default function MobileBoard({ onOpenMenu }) {
 
   const board = state.boards.find((b) => b.id === state.activeBoardId);
 
+  useColumnFiltersVersion();
+
   if (!board) {
     return (
       <div className="mboard">
@@ -164,10 +173,15 @@ export default function MobileBoard({ onOpenMenu }) {
     new Set(['All', ...memberNames, 'Unassigned'])
   );
 
+  const typeFilter = activeColumn
+    ? getColumnFilter(columnsBoardId, activeColumn.id)
+    : 'all';
+
   const tasks = activeColumn
     ? sortTasks(
         allTasks.filter((t) => {
           if (t.archived || t.columnId !== activeColumn.id) return false;
+          if (!matchesTypeFilter(t, typeFilter)) return false;
           if (state.filter === 'All') return true;
           const names = taskAssignees(t);
           if (state.filter === 'Unassigned') return names.length === 0;
@@ -536,8 +550,10 @@ export default function MobileBoard({ onOpenMenu }) {
         <div className="mboard-toolbar-actions">
           <button
             type="button"
-            className="mboard-tool-btn"
-            title="Sort"
+            className={`mboard-tool-btn ${
+              typeFilter !== 'all' ? 'filtered' : ''
+            }`}
+            title={typeFilter === 'all' ? 'Sort and filter' : 'Sort and filter (filtered)'}
             onClick={() => setOpenMenu(openMenu === 'sort' ? null : 'sort')}
           >
             ⇅
@@ -601,6 +617,24 @@ export default function MobileBoard({ onOpenMenu }) {
                 {(activeColumn.sortBy || DEFAULT_SORT) === option.value && (
                   <span>✓</span>
                 )}
+              </button>
+            ))}
+            <div className="mboard-menu-sep" />
+            <span className="mboard-menu-label">Filter</span>
+            {TYPE_FILTERS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={`mboard-menu-item ${
+                  typeFilter === option.value ? 'active' : ''
+                }`}
+                onClick={() => {
+                  setColumnFilter(columnsBoardId, activeColumn.id, option.value);
+                  setOpenMenu(null);
+                }}
+              >
+                {option.label}
+                {typeFilter === option.value && <span>✓</span>}
               </button>
             ))}
           </div>
@@ -785,7 +819,11 @@ export default function MobileBoard({ onOpenMenu }) {
           );
         })}
         {tasks.length === 0 && (
-          <li className="mboard-no-tasks">No tasks here.</li>
+          <li className="mboard-no-tasks">
+            {typeFilter === 'all'
+              ? 'No tasks here.'
+              : `No ${typeFilter === 'bug' ? 'bugs' : 'features'} here.`}
+          </li>
         )}
       </ul>
 

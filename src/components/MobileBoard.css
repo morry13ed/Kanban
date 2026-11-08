@@ -171,6 +171,10 @@
   cursor: pointer;
 }
 
+.mboard-tool-btn.filtered {
+  color: var(--accent);
+}
+
 .mboard-tool-btn:active {
   background: var(--hover);
 }

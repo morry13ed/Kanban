@@ -118,6 +118,10 @@
   border-radius: 10px;
 }
 
+.column-count.filtered {
+  color: var(--accent);
+}
+
 /* While editing, the header stacks so the toggle sits under the name field.
    The taller header pushes the task list down, which is intended. */
 .column-header.editing {
@@ -209,6 +213,11 @@
   transition: all 0.15s;
 }
 
+.column-action-btn.filtered,
+.column-action-btn.filtered:hover {
+  color: var(--accent);
+}
+
 .column-action-btn:hover {
   background: var(--hover);
   color: var(--text-primary);
@@ -289,6 +298,12 @@
 
 .column-sort-item.danger:hover {
   background: var(--danger-bg);
+}
+
+.column-sort-divider {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--border);
 }
 
 .column-sort-check {

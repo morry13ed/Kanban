@@ -9,6 +9,12 @@ import {
   COLUMN_TYPES,
   isSuccessColumn,
 } from '../utils/helpers';
+import {
+  TYPE_FILTERS,
+  useColumnFilter,
+  setColumnFilter,
+  matchesTypeFilter,
+} from '../utils/columnFilter';
 import SegmentedControl from './SegmentedControl';
 import { SwapVertIcon, AddIcon, MoreVertIcon, TrashIcon } from './icons';
 import TaskCard from './TaskCard';
@@ -17,7 +23,7 @@ import './Column.css';
 
 export default function Column({
   column,
-  tasks,
+  tasks: allColumnTasks,
   boardId,
   isFirst,
   isLast,
@@ -73,6 +79,13 @@ export default function Column({
   const sortBy = column.sortBy || DEFAULT_SORT;
   const activeSort = SORT_OPTIONS.find((o) => o.value === sortBy);
 
+  // Personal bug/feature filter (this browser only).
+  const typeFilter = useColumnFilter(boardId, column.id);
+  const isFiltered = typeFilter !== 'all';
+  const tasks = isFiltered
+    ? allColumnTasks.filter((t) => matchesTypeFilter(t, typeFilter))
+    : allColumnTasks;
+
   // Dismiss the sort menu on outside click or Escape.
   useEffect(() => {
     if (!showSortMenu) return;
@@ -96,7 +109,9 @@ export default function Column({
 
   // Only meaningful under manual sort — with a sort applied the order is
   // computed, so dropping at a position would have no visible effect.
-  const canReorder = sortBy === DEFAULT_SORT;
+  // A filter hides cards, so a drop position among the visible ones would
+  // land somewhere unseen in the full order.
+  const canReorder = sortBy === DEFAULT_SORT && !isFiltered;
 
   const handleDropOnTask = (taskId, edge) => {
     // The card's own drop handler stops propagation, so this column's
@@ -121,6 +136,11 @@ export default function Column({
       type: 'SET_COLUMN_SORT',
       payload: { boardId, columnId: column.id, sortBy: value },
     });
+    setShowSortMenu(false);
+  };
+
+  const handleTypeFilter = (value) => {
+    setColumnFilter(boardId, column.id, value);
     setShowSortMenu(false);
   };
 
@@ -291,18 +311,35 @@ export default function Column({
             title="Click to rename column"
           >
             {column.name}
-            <span className="column-count">{tasks.length}</span>
+            <span
+              className={`column-count ${isFiltered ? 'filtered' : ''}`}
+              title={
+                isFiltered
+                  ? `Showing ${typeFilter === 'bug' ? 'bugs' : 'features'} only`
+                  : undefined
+              }
+            >
+              {isFiltered
+                ? `${tasks.length} / ${allColumnTasks.length}`
+                : tasks.length}
+            </span>
           </h3>
         )}
         <div className="column-actions">
           <div className="column-sort" ref={sortRef}>
             <button
-              className="column-action-btn"
+              className={`column-action-btn ${isFiltered ? 'filtered' : ''}`}
               onClick={() => setShowSortMenu((open) => !open)}
               title={
-                sortBy === DEFAULT_SORT
-                  ? 'Sort tasks'
-                  : `Sorted by ${activeSort.label.toLowerCase()}`
+                [
+                  sortBy === DEFAULT_SORT
+                    ? 'Sort and filter tasks'
+                    : `Sorted by ${activeSort.label.toLowerCase()}`,
+                  isFiltered &&
+                    `${typeFilter === 'bug' ? 'bugs' : 'features'} only`,
+                ]
+                  .filter(Boolean)
+                  .join(', ')
               }
             >
               <SwapVertIcon />
@@ -321,6 +358,22 @@ export default function Column({
                   >
                     {option.label}
                     {sortBy === option.value && (
+                      <span className="column-sort-check">✓</span>
+                    )}
+                  </button>
+                ))}
+                <div className="column-sort-divider" />
+                <span className="column-sort-label">Filter</span>
+                {TYPE_FILTERS.map((option) => (
+                  <button
+                    key={option.value}
+                    className={`column-sort-item ${
+                      typeFilter === option.value ? 'active' : ''
+                    }`}
+                    onClick={() => handleTypeFilter(option.value)}
+                  >
+                    {option.label}
+                    {typeFilter === option.value && (
                       <span className="column-sort-check">✓</span>
                     )}
                   </button>
